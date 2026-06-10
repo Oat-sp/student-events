@@ -19,14 +19,16 @@ README.md
 
 1. เปิด Google Drive ด้วยบัญชี Google ฟรี
 2. สร้าง Google Sheet ใหม่
-3. ตั้งชื่อไฟล์ตามต้องการ เช่น `กิจกรรมนักเรียน`
+3. ตั้งชื่อไฟล์เป็น `student-events-data`
 4. ไม่จำเป็นต้องสร้างชีตหรือหัวตารางเอง ระบบจะสร้างชีตชื่อ `events` และหัวตารางให้อัตโนมัติเมื่อบันทึกข้อมูลครั้งแรก
 
 หัวตารางที่ระบบใช้คือ:
 
 ```text
-timestamp, title, posterImage, type, category, organizer, m1, m2, m3, m4, m5, m6, interestTags, featureTags, portfolioTags, registerOpenDate, registerCloseDate, submissionDate, eventDate, location, summary, sourceLink, documentLinks, contactTeacher, isPublished
+timestamp, title, posterImage, type, category, organizer, m1, m2, m3, m4, m5, m6, interestTags, featureTags, portfolioTags, registerOpenDate, registerOpenTime, registerCloseDate, registerCloseTime, submissionDate, eventStartDate, eventEndDate, location, teamMemberCount, summary, sourceLink, documentLinks, contactTeacher, isPublished
 ```
+
+ถ้าเคยใช้หัวตารางรุ่นเก่าที่มี `eventDate` ระบบจะย้ายค่าเดิมไปที่ `eventStartDate` ให้อัตโนมัติเมื่อ Apps Script ถูกเรียกใช้งานครั้งถัดไป
 
 ## 2. วางโค้ด Google Apps Script
 
@@ -41,6 +43,7 @@ Apps Script นี้มีฟังก์ชันหลัก:
 - `doGet(e)` แสดงฟอร์มครู และส่ง JSON เมื่อเรียกด้วย `?action=events`
 - `saveEvent(form)` บันทึกข้อมูลกิจกรรมลงชีต `events`
 - `getEvents()` ส่งข้อมูลกิจกรรมที่เผยแพร่แล้ว โดยแปลงระดับชั้นเป็น boolean และแปลงแท็กเป็น array
+- ระบบจะตรวจชื่อไฟล์ Google Sheet และเปลี่ยนเป็น `student-events-data` ให้อัตโนมัติ
 
 ## 3. Deploy เป็น Web App
 
@@ -109,15 +112,18 @@ const DATA_URL = 'https://script.google.com/macros/s/DEPLOYMENT_ID/exec?action=e
 1. เปิด URL ของ Apps Script Web App
 2. กรอกข้อมูลกิจกรรม
 3. เลือกระดับชั้นและแท็กที่เกี่ยวข้อง
-4. ใส่ลิงก์รูปประชาสัมพันธ์จากต้นทาง
-5. ใส่ลิงก์เอกสารแบบหลายบรรทัด เช่น:
+4. ใส่วันเปิด/ปิดรับสมัคร พร้อมเวลาได้ถ้าประกาศระบุไว้
+5. ใส่วันเริ่มและวันจบแข่งขัน/กิจกรรม ถ้ามีหลายวัน
+6. ใส่จำนวนสมาชิกในทีมถ้าต้องการแสดงบนหน้าเว็บ ถ้าเว้นว่าง ระบบจะไม่แสดงช่องนี้
+7. ใส่ลิงก์รูปประชาสัมพันธ์จากต้นทาง
+8. ใส่ลิงก์เอกสารแบบหลายบรรทัด เช่น:
 
 ```text
 ระเบียบการแข่งขัน: https://example.com/rules.pdf
 ใบสมัคร: https://example.com/form
 ```
 
-6. กดบันทึกข้อมูล
+9. กดบันทึกข้อมูล
 
 ### นักเรียน
 
@@ -130,5 +136,5 @@ const DATA_URL = 'https://script.google.com/macros/s/DEPLOYMENT_ID/exec?action=e
 
 - ระบบไม่เก็บไฟล์รูปภาพหรือเอกสารไว้เอง ใช้เป็นลิงก์จากต้นทางเท่านั้น
 - ถ้าไม่ต้องการเผยแพร่รายการใด ให้เอาเครื่องหมายถูกออกจาก `เผยแพร่ให้นักเรียนเห็น` ในฟอร์ม หรือแก้ค่า `isPublished` ในชีตเป็น `FALSE`
-- หน้าเว็บจะคำนวณสถานะรับสมัครจากวันที่เปิดรับสมัคร วันปิดรับสมัคร และวันกิจกรรมโดยอัตโนมัติ
+- หน้าเว็บจะคำนวณสถานะรับสมัครจากวันที่/เวลาเปิดรับสมัคร วันที่/เวลาปิดรับสมัคร และวันกิจกรรมโดยอัตโนมัติ
 - แท็บ `สรุปประชาสัมพันธ์` มีข้อความพร้อมคัดลอกสำหรับส่งต่อใน LINE หรือช่องทางประชาสัมพันธ์ของโรงเรียน

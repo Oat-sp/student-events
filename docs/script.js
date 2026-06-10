@@ -3,9 +3,9 @@ const DATA_URL = 'https://script.google.com/macros/s/AKfycbwUt_kyuMqXbPnEWx2CLND
 
 const TYPES = ['การแข่งขัน', 'จิตอาสา', 'งานแนะแนว', 'ค่าย/อบรม', 'ทุนการศึกษา', 'กิจกรรมอื่น ๆ'];
 const CATEGORIES = ['วิทยาศาสตร์', 'คณิตศาสตร์', 'เทคโนโลยี', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคมศึกษา', 'ศิลปะ', 'กีฬา', 'สิ่งแวดล้อม', 'แนะแนวการศึกษา', 'จิตอาสา', 'ทั่วไป'];
-const INTEREST_TAGS = ['วิทยาศาสตร์', 'คณิตศาสตร์', 'เทคโนโลยี', 'Coding', 'AI / Robot', 'โครงงาน', 'ทดลอง', 'นวัตกรรม', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคมศึกษา', 'ศิลปะ', 'กีฬา', 'สิ่งแวดล้อม', 'การนำเสนอ', 'เขียนเรียงความ', 'ทำงานเป็นทีม'];
-const FEATURE_TAGS = ['ฟรี', 'ออนไลน์', 'มีเกียรติบัตร', 'เหมาะสำหรับมือใหม่', 'แข่งขันเดี่ยว', 'แข่งขันทีม', 'มีค่าสมัคร', 'ต้องส่งผลงาน', 'มีรอบคัดเลือก', 'จำกัดจำนวนผู้สมัคร', 'รับสมัครผ่านโรงเรียน', 'สมัครเองได้'];
-const PORTFOLIO_TAGS = ['วิทยาศาสตร์', 'วิศวกรรม', 'แพทย์ / สุขภาพ', 'คอมพิวเตอร์ / AI', 'คณิตศาสตร์', 'ภาษา', 'สังคมศาสตร์', 'รัฐศาสตร์ / กฎหมาย', 'ศิลปกรรม', 'นิเทศ / สื่อสาร', 'ธุรกิจ / บริหาร', 'สิ่งแวดล้อม', 'จิตอาสา', 'ภาวะผู้นำ', 'นวัตกรรม', 'ทักษะการนำเสนอ'];
+const INTEREST_TAGS = ['วิทยาศาสตร์', 'คณิตศาสตร์', 'เทคโนโลยี', 'Coding', 'AI / Robot', 'โครงงาน', 'ทดลอง', 'นวัตกรรม', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคมศึกษา', 'ศิลปะ', 'กีฬา', 'สิ่งแวดล้อม', 'การนำเสนอ', 'เขียนเรียงความ', 'ทำงานเป็นทีม', 'การตอบปัญหา', 'การสอบ'];
+const FEATURE_TAGS = ['ฟรี', 'ออนไลน์', 'มีเกียรติบัตร', 'เหมาะสำหรับมือใหม่', 'แข่งขันเดี่ยว', 'แข่งขันทีม', 'มีค่าสมัคร', 'ต้องส่งผลงาน', 'มีรอบคัดเลือก', 'จำกัดจำนวนผู้สมัคร', 'ต้องเดินทาง'];
+const PORTFOLIO_TAGS = ['วิชาการ', 'วิทยาศาสตร์', 'วิศวกรรม', 'แพทย์ / สุขภาพ', 'คอมพิวเตอร์ / AI', 'คณิตศาสตร์', 'ภาษา', 'สังคมศาสตร์', 'รัฐศาสตร์ / กฎหมาย', 'ศิลปกรรม', 'นิเทศ / สื่อสาร', 'ธุรกิจ / บริหาร', 'สิ่งแวดล้อม', 'จิตอาสา', 'ภาวะผู้นำ', 'นวัตกรรม', 'ทักษะการนำเสนอ'];
 const LEVEL_KEYS = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6'];
 const LEVEL_LABELS = {
   m1: 'ม.1',
@@ -177,6 +177,8 @@ async function loadEvents() {
 }
 
 function normalizeEvent(rawEvent) {
+  const eventStartDate = stringValue(rawEvent.eventStartDate) || stringValue(rawEvent.eventDate);
+
   const event = {
     id: createEventId(rawEvent),
     timestamp: stringValue(rawEvent.timestamp),
@@ -195,10 +197,15 @@ function normalizeEvent(rawEvent) {
     featureTags: toArray(rawEvent.featureTags),
     portfolioTags: toArray(rawEvent.portfolioTags),
     registerOpenDate: stringValue(rawEvent.registerOpenDate),
+    registerOpenTime: stringValue(rawEvent.registerOpenTime),
     registerCloseDate: stringValue(rawEvent.registerCloseDate),
+    registerCloseTime: stringValue(rawEvent.registerCloseTime),
     submissionDate: stringValue(rawEvent.submissionDate),
-    eventDate: stringValue(rawEvent.eventDate),
+    eventStartDate,
+    eventEndDate: stringValue(rawEvent.eventEndDate),
+    eventDate: eventStartDate,
     location: stringValue(rawEvent.location),
+    teamMemberCount: stringValue(rawEvent.teamMemberCount),
     summary: stringValue(rawEvent.summary),
     sourceLink: safeUrl(rawEvent.sourceLink),
     documentLinks: stringValue(rawEvent.documentLinks),
@@ -218,7 +225,8 @@ function createEventId(event) {
     stringValue(event.timestamp),
     stringValue(event.title),
     stringValue(event.registerCloseDate),
-    stringValue(event.eventDate)
+    stringValue(event.eventStartDate || event.eventDate),
+    stringValue(event.eventEndDate)
   ].join('|');
 }
 
@@ -334,10 +342,11 @@ function renderEventCard(event) {
         ${event.summary ? `<p class="summary">${escapeHTML(event.summary)}</p>` : ''}
         <div class="meta-list">
           ${event.organizer ? `<div><strong>ผู้จัด:</strong> ${escapeHTML(event.organizer)}</div>` : ''}
-          ${event.registerOpenDate || event.registerCloseDate ? `<div><strong>รับสมัคร:</strong> ${formatDateRange(event.registerOpenDate, event.registerCloseDate)}</div>` : ''}
+          ${event.registerOpenDate || event.registerCloseDate ? `<div><strong>รับสมัคร:</strong> ${formatRegistrationRange(event)}</div>` : ''}
           ${event.submissionDate ? `<div><strong>ส่งผลงาน:</strong> ${formatThaiDate(event.submissionDate)}</div>` : ''}
-          ${event.eventDate ? `<div><strong>วันกิจกรรม:</strong> ${formatThaiDate(event.eventDate)}</div>` : ''}
+          ${event.eventStartDate || event.eventEndDate ? `<div><strong>วันกิจกรรม:</strong> ${formatEventDateRange(event)}</div>` : ''}
           ${event.location ? `<div><strong>สถานที่:</strong> ${escapeHTML(event.location)}</div>` : ''}
+          ${event.teamMemberCount ? `<div><strong>จำนวนสมาชิกทีม:</strong> ${escapeHTML(event.teamMemberCount)}</div>` : ''}
           ${event.contactTeacher ? `<div><strong>ติดต่อ:</strong> ${escapeHTML(event.contactTeacher)}</div>` : ''}
         </div>
         ${renderTags(event)}
@@ -367,15 +376,22 @@ function renderCalendarView(events) {
   const entries = [];
 
   events.forEach(event => {
+    const startDate = parseLocalDate(event.eventStartDate);
+    const endDate = parseLocalDate(event.eventEndDate);
+
     [
-      ['registerOpenDate', 'เปิดรับสมัคร'],
-      ['registerCloseDate', 'ปิดรับสมัคร'],
+      ['registerOpenDate', event.registerOpenTime ? `เปิดรับสมัคร ${formatTime(event.registerOpenTime)}` : 'เปิดรับสมัคร'],
+      ['registerCloseDate', event.registerCloseTime ? `ปิดรับสมัคร ${formatTime(event.registerCloseTime)}` : 'ปิดรับสมัคร'],
       ['submissionDate', 'ส่งผลงาน'],
-      ['eventDate', 'วันกิจกรรม']
+      ['eventStartDate', 'เริ่มกิจกรรม']
     ].forEach(([field, label]) => {
       const date = parseLocalDate(event[field]);
       if (date) entries.push({ date, label, event });
     });
+
+    if (endDate && (!startDate || toDateKey(endDate) !== toDateKey(startDate))) {
+      entries.push({ date: endDate, label: 'จบกิจกรรม', event });
+    }
   });
 
   entries.sort((a, b) => a.date.getTime() - b.date.getTime());
@@ -429,9 +445,10 @@ function getSummaryEvents(events) {
     : new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
   return events.filter(event => {
-    const date = parseLocalDate(event.eventDate) || parseLocalDate(event.registerCloseDate);
-    if (!date) return false;
-    return date >= today && date <= endDate;
+    const startDate = parseLocalDate(event.eventStartDate) || parseLocalDate(event.registerCloseDate);
+    const endDateForEvent = parseLocalDate(event.eventEndDate) || startDate;
+    if (!startDate || !endDateForEvent) return false;
+    return startDate <= endDate && endDateForEvent >= today;
   });
 }
 
@@ -456,10 +473,11 @@ function buildSummaryText(events) {
       `${index + 1}. ${event.title || 'ไม่ระบุชื่อกิจกรรม'}`,
       `ประเภท: ${event.type || '-'} | หมวดหมู่: ${event.category || '-'}`,
       `ระดับชั้น: ${event.autoLevelTags.join(', ') || '-'}`,
-      `รับสมัคร: ${formatDateRange(event.registerOpenDate, event.registerCloseDate)}`,
+      `รับสมัคร: ${formatRegistrationRange(event)}`,
       event.submissionDate ? `ส่งผลงาน: ${formatThaiDate(event.submissionDate)}` : '',
-      event.eventDate ? `วันกิจกรรม: ${formatThaiDate(event.eventDate)}` : '',
+      event.eventStartDate || event.eventEndDate ? `วันกิจกรรม: ${formatEventDateRange(event)}` : '',
       event.location ? `สถานที่: ${event.location}` : '',
+      event.teamMemberCount ? `จำนวนสมาชิกทีม: ${event.teamMemberCount}` : '',
       event.summary ? `รายละเอียด: ${event.summary}` : '',
       event.sourceLink ? `ประกาศต้นทาง: ${event.sourceLink}` : '',
       event.contactTeacher ? `ติดต่อ: ${event.contactTeacher}` : ''
@@ -473,10 +491,11 @@ function buildEventPromotionText(event) {
     `ประเภท: ${event.type || '-'} | หมวดหมู่: ${event.category || '-'}`,
     `ระดับชั้น: ${event.autoLevelTags.join(', ') || '-'}`,
     `สถานะ: ${event.status.label}`,
-    `รับสมัคร: ${formatDateRange(event.registerOpenDate, event.registerCloseDate)}`,
+    `รับสมัคร: ${formatRegistrationRange(event)}`,
     event.submissionDate ? `ส่งผลงาน: ${formatThaiDate(event.submissionDate)}` : '',
-    event.eventDate ? `วันกิจกรรม: ${formatThaiDate(event.eventDate)}` : '',
+    event.eventStartDate || event.eventEndDate ? `วันกิจกรรม: ${formatEventDateRange(event)}` : '',
     event.location ? `สถานที่: ${event.location}` : '',
+    event.teamMemberCount ? `จำนวนสมาชิกทีม: ${event.teamMemberCount}` : '',
     event.summary ? `รายละเอียด: ${event.summary}` : '',
     event.sourceLink ? `ประกาศต้นทาง: ${event.sourceLink}` : '',
     event.contactTeacher ? `ติดต่อครูผู้ประสานงาน: ${event.contactTeacher}` : ''
@@ -496,33 +515,34 @@ function getAutoLevelTags(event) {
 }
 
 function getStatus(event) {
-  // เทียบแบบ date-only เพื่อลดปัญหา timezone จากวันที่ใน Google Sheet
+  // ใช้เวลาเปิด/ปิดเมื่อมีข้อมูล แต่ยังเทียบวันกิจกรรมแบบ date-only เพื่อลดปัญหา timezone
+  const now = new Date();
   const today = getTodayLocal();
-  const openDate = parseLocalDate(event.registerOpenDate);
-  const closeDate = parseLocalDate(event.registerCloseDate);
-  const eventDate = parseLocalDate(event.eventDate);
+  const openAt = parseLocalDateTime(event.registerOpenDate, event.registerOpenTime, 'start');
+  const closeAt = parseLocalDateTime(event.registerCloseDate, event.registerCloseTime, 'end');
+  const eventEndDate = parseLocalDate(event.eventEndDate || event.eventStartDate);
 
-  if (eventDate && today > eventDate) {
+  if (eventEndDate && today > eventEndDate) {
     return { code: 'done', label: 'เสร็จสิ้นแล้ว', className: 'status-done' };
   }
 
-  if (openDate && today < openDate) {
+  if (openAt && now < openAt) {
     return { code: 'upcoming', label: 'ยังไม่เปิดรับสมัคร', className: 'status-upcoming' };
   }
 
-  if (closeDate && today > closeDate && (!eventDate || today <= eventDate)) {
+  if (closeAt && now > closeAt && (!eventEndDate || today <= eventEndDate)) {
     return { code: 'closed', label: 'ปิดรับสมัครแล้ว / รอกิจกรรม', className: 'status-closed' };
   }
 
-  if (closeDate && (!openDate || today >= openDate) && today <= closeDate) {
-    const daysLeft = Math.ceil((closeDate.getTime() - today.getTime()) / MS_PER_DAY);
+  if (closeAt && (!openAt || now >= openAt) && now <= closeAt) {
+    const daysLeft = Math.ceil((closeAt.getTime() - now.getTime()) / MS_PER_DAY);
     if (daysLeft <= 7) {
       return { code: 'closing', label: 'ใกล้ปิดรับสมัคร', className: 'status-closing' };
     }
     return { code: 'open', label: 'เปิดรับสมัคร', className: 'status-open' };
   }
 
-  if (openDate && today >= openDate && !closeDate) {
+  if (openAt && now >= openAt && !closeAt) {
     return { code: 'open', label: 'เปิดรับสมัคร', className: 'status-open' };
   }
 
@@ -566,6 +586,26 @@ function parseLocalDate(value) {
   return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
 }
 
+function parseLocalDateTime(dateValue, timeValue, boundary) {
+  const date = parseLocalDate(dateValue);
+  if (!date) return null;
+
+  const time = stringValue(timeValue);
+  const match = time.match(/^(\d{1,2}):(\d{2})/);
+  if (match) {
+    date.setHours(Number(match[1]), Number(match[2]), 0, 0);
+    return date;
+  }
+
+  if (boundary === 'end') {
+    date.setHours(23, 59, 59, 999);
+  } else {
+    date.setHours(0, 0, 0, 0);
+  }
+
+  return date;
+}
+
 function getTodayLocal() {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -593,6 +633,43 @@ function formatThaiDate(value) {
     month: 'short',
     day: 'numeric'
   }).format(date);
+}
+
+function formatRegistrationRange(event) {
+  const startText = formatDateTime(event.registerOpenDate, event.registerOpenTime);
+  const endText = formatDateTime(event.registerCloseDate, event.registerCloseTime);
+
+  if (startText && endText) return `${startText} - ${endText}`;
+  if (endText) return `ถึง ${endText}`;
+  if (startText) return `ตั้งแต่ ${startText}`;
+  return '-';
+}
+
+function formatEventDateRange(event) {
+  const startDate = parseLocalDate(event.eventStartDate);
+  const endDate = parseLocalDate(event.eventEndDate);
+  const startText = startDate ? formatThaiDate(event.eventStartDate) : '';
+  const endText = endDate ? formatThaiDate(event.eventEndDate) : '';
+
+  if (startText && endText && toDateKey(startDate) !== toDateKey(endDate)) return `${startText} - ${endText}`;
+  if (startText) return startText;
+  if (endText) return endText;
+  return '-';
+}
+
+function formatDateTime(dateValue, timeValue) {
+  const dateText = formatThaiDate(dateValue);
+  if (dateText === '-') return '';
+
+  const timeText = formatTime(timeValue);
+  return timeText ? `${dateText} ${timeText} น.` : dateText;
+}
+
+function formatTime(value) {
+  const match = stringValue(value).match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return '';
+
+  return `${String(Number(match[1])).padStart(2, '0')}:${match[2]}`;
 }
 
 function formatDateRange(start, end) {

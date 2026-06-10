@@ -266,16 +266,28 @@
             <input id="registerOpenDate" name="registerOpenDate" type="date">
           </div>
           <div>
+            <label for="registerOpenTime">เวลาเปิดรับสมัคร</label>
+            <input id="registerOpenTime" name="registerOpenTime" type="time">
+          </div>
+          <div>
             <label for="registerCloseDate">วันปิดรับสมัคร</label>
             <input id="registerCloseDate" name="registerCloseDate" type="date">
+          </div>
+          <div>
+            <label for="registerCloseTime">เวลาปิดรับสมัคร</label>
+            <input id="registerCloseTime" name="registerCloseTime" type="time">
           </div>
           <div>
             <label for="submissionDate">วันส่งผลงาน</label>
             <input id="submissionDate" name="submissionDate" type="date">
           </div>
           <div>
-            <label for="eventDate">วันแข่งขัน/วันกิจกรรม</label>
-            <input id="eventDate" name="eventDate" type="date">
+            <label for="eventStartDate">วันเริ่มแข่งขัน/กิจกรรม</label>
+            <input id="eventStartDate" name="eventStartDate" type="date">
+          </div>
+          <div>
+            <label for="eventEndDate">วันจบแข่งขัน/กิจกรรม</label>
+            <input id="eventEndDate" name="eventEndDate" type="date">
           </div>
         </div>
       </section>
@@ -315,6 +327,11 @@
             <label for="contactTeacher">ครูผู้ประสานงาน</label>
             <input id="contactTeacher" name="contactTeacher">
           </div>
+          <div>
+            <label for="teamMemberCount">จำนวนสมาชิกในทีม</label>
+            <input id="teamMemberCount" name="teamMemberCount" inputmode="numeric" placeholder="เช่น 1 คน, 2-3 คน">
+            <p class="hint">ถ้าเว้นว่าง ระบบจะไม่แสดงข้อมูลนี้บนหน้าเว็บนักเรียน</p>
+          </div>
         </div>
       </section>
 
@@ -340,9 +357,9 @@
       ['m5', 'ม.5'],
       ['m6', 'ม.6']
     ];
-    const INTEREST_TAGS = ['วิทยาศาสตร์', 'คณิตศาสตร์', 'เทคโนโลยี', 'Coding', 'AI / Robot', 'โครงงาน', 'ทดลอง', 'นวัตกรรม', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคมศึกษา', 'ศิลปะ', 'กีฬา', 'สิ่งแวดล้อม', 'การนำเสนอ', 'เขียนเรียงความ', 'ทำงานเป็นทีม'];
-    const FEATURE_TAGS = ['ฟรี', 'ออนไลน์', 'มีเกียรติบัตร', 'เหมาะสำหรับมือใหม่', 'แข่งขันเดี่ยว', 'แข่งขันทีม', 'มีค่าสมัคร', 'ต้องส่งผลงาน', 'มีรอบคัดเลือก', 'จำกัดจำนวนผู้สมัคร', 'รับสมัครผ่านโรงเรียน', 'สมัครเองได้'];
-    const PORTFOLIO_TAGS = ['วิทยาศาสตร์', 'วิศวกรรม', 'แพทย์ / สุขภาพ', 'คอมพิวเตอร์ / AI', 'คณิตศาสตร์', 'ภาษา', 'สังคมศาสตร์', 'รัฐศาสตร์ / กฎหมาย', 'ศิลปกรรม', 'นิเทศ / สื่อสาร', 'ธุรกิจ / บริหาร', 'สิ่งแวดล้อม', 'จิตอาสา', 'ภาวะผู้นำ', 'นวัตกรรม', 'ทักษะการนำเสนอ'];
+    const INTEREST_TAGS = ['วิทยาศาสตร์', 'คณิตศาสตร์', 'เทคโนโลยี', 'Coding', 'AI / Robot', 'โครงงาน', 'ทดลอง', 'นวัตกรรม', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคมศึกษา', 'ศิลปะ', 'กีฬา', 'สิ่งแวดล้อม', 'การนำเสนอ', 'เขียนเรียงความ', 'ทำงานเป็นทีม', 'การตอบปัญหา', 'การสอบ'];
+    const FEATURE_TAGS = ['ฟรี', 'ออนไลน์', 'มีเกียรติบัตร', 'เหมาะสำหรับมือใหม่', 'แข่งขันเดี่ยว', 'แข่งขันทีม', 'มีค่าสมัคร', 'ต้องส่งผลงาน', 'มีรอบคัดเลือก', 'จำกัดจำนวนผู้สมัคร', 'ต้องเดินทาง'];
+    const PORTFOLIO_TAGS = ['วิชาการ', 'วิทยาศาสตร์', 'วิศวกรรม', 'แพทย์ / สุขภาพ', 'คอมพิวเตอร์ / AI', 'คณิตศาสตร์', 'ภาษา', 'สังคมศาสตร์', 'รัฐศาสตร์ / กฎหมาย', 'ศิลปกรรม', 'นิเทศ / สื่อสาร', 'ธุรกิจ / บริหาร', 'สิ่งแวดล้อม', 'จิตอาสา', 'ภาวะผู้นำ', 'นวัตกรรม', 'ทักษะการนำเสนอ'];
 
     const form = document.querySelector('#eventForm');
     const statusText = document.querySelector('#formStatus');
@@ -412,10 +429,14 @@
         featureTags: selectedValues('featureTags'),
         portfolioTags: selectedValues('portfolioTags'),
         registerOpenDate: valueOf('registerOpenDate'),
+        registerOpenTime: valueOf('registerOpenTime'),
         registerCloseDate: valueOf('registerCloseDate'),
+        registerCloseTime: valueOf('registerCloseTime'),
         submissionDate: valueOf('submissionDate'),
-        eventDate: valueOf('eventDate'),
+        eventStartDate: valueOf('eventStartDate'),
+        eventEndDate: valueOf('eventEndDate'),
         location: valueOf('location'),
+        teamMemberCount: valueOf('teamMemberCount'),
         summary: valueOf('summary'),
         sourceLink: valueOf('sourceLink'),
         documentLinks: valueOf('documentLinks'),
