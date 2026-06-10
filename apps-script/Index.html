@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ฟอร์มบันทึกกิจกรรมนักเรียน</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7f2;
+      --surface: #ffffff;
+      --ink: #15202b;
+      --muted: #64748b;
+      --line: #dfe7dd;
+      --brand: #0f766e;
+      --brand-dark: #115e59;
+      --accent: #f97316;
+      --danger: #b91c1c;
+      --shadow: 0 16px 44px rgba(15, 23, 42, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+
+    .page {
+      width: min(1080px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 48px;
+    }
+
+    header {
+      margin-bottom: 18px;
+    }
+
+    .eyebrow {
+      margin: 0 0 6px;
+      color: var(--brand);
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.85rem;
+      line-height: 1.25;
+    }
+
+    .lead {
+      max-width: 760px;
+      margin: 10px 0 0;
+      color: var(--muted);
+    }
+
+    form {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    .section {
+      padding: 18px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .section:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 1.05rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid #cbd5d7;
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: var(--ink);
+      background: #fff;
+      font: inherit;
+    }
+
+    textarea {
+      min-height: 118px;
+      resize: vertical;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: 3px solid rgba(15, 118, 110, 0.18);
+      border-color: var(--brand);
+    }
+
+    .check-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfa;
+      font-weight: 600;
+    }
+
+    .check-item input {
+      width: 18px;
+      min-height: 18px;
+      margin-top: 3px;
+      flex: 0 0 auto;
+    }
+
+    .hint {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    button {
+      border: 0;
+      border-radius: 8px;
+      min-height: 44px;
+      padding: 10px 18px;
+      background: var(--brand);
+      color: #fff;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: var(--brand-dark);
+    }
+
+    button:disabled {
+      cursor: wait;
+      opacity: 0.72;
+    }
+
+    .status {
+      margin: 0;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .status.is-error {
+      color: var(--danger);
+    }
+
+    .status.is-success {
+      color: var(--brand);
+    }
+
+    @media (max-width: 820px) {
+      .grid,
+      .grid-3,
+      .check-grid {
+        grid-template-columns: 1fr;
+      }
+
+      form {
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <p class="eyebrow">สำหรับครูผู้ประสานงาน</p>
+      <h1>ฟอร์มบันทึกกิจกรรมนักเรียน</h1>
+      <p class="lead">กรอกข้อมูลกิจกรรมหรือการแข่งขันเพื่อบันทึกลง Google Sheet และเผยแพร่ให้นักเรียนดูผ่านหน้า GitHub Pages</p>
+    </header>
+
+    <form id="eventForm">
+      <section class="section">
+        <h2>ข้อมูลหลัก</h2>
+        <div class="grid">
+          <div>
+            <label for="title">ชื่อกิจกรรม/การแข่งขัน</label>
+            <input id="title" name="title" required>
+          </div>
+          <div>
+            <label for="posterImage">ลิงก์รูปประชาสัมพันธ์</label>
+            <input id="posterImage" name="posterImage" type="url" placeholder="https://...">
+          </div>
+          <div>
+            <label for="type">ประเภท</label>
+            <select id="type" name="type" required></select>
+          </div>
+          <div>
+            <label for="category">หมวดหมู่</label>
+            <select id="category" name="category" required></select>
+          </div>
+          <div>
+            <label for="organizer">ผู้จัดกิจกรรม/การแข่งขัน</label>
+            <input id="organizer" name="organizer">
+          </div>
+          <div>
+            <label for="location">สถานที่</label>
+            <input id="location" name="location">
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>ระดับชั้นที่เหมาะสม</h2>
+        <div class="check-grid" id="levelChecks"></div>
+      </section>
+
+      <section class="section">
+        <h2>กำหนดการ</h2>
+        <div class="grid">
+          <div>
+            <label for="registerOpenDate">วันเปิดรับสมัคร</label>
+            <input id="registerOpenDate" name="registerOpenDate" type="date">
+          </div>
+          <div>
+            <label for="registerCloseDate">วันปิดรับสมัคร</label>
+            <input id="registerCloseDate" name="registerCloseDate" type="date">
+          </div>
+          <div>
+            <label for="submissionDate">วันส่งผลงาน</label>
+            <input id="submissionDate" name="submissionDate" type="date">
+          </div>
+          <div>
+            <label for="eventDate">วันแข่งขัน/วันกิจกรรม</label>
+            <input id="eventDate" name="eventDate" type="date">
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>แท็กความสนใจ</h2>
+        <div class="check-grid" id="interestTagChecks"></div>
+      </section>
+
+      <section class="section">
+        <h2>แท็กคุณสมบัติ</h2>
+        <div class="check-grid" id="featureTagChecks"></div>
+      </section>
+
+      <section class="section">
+        <h2>แท็ก Portfolio</h2>
+        <div class="check-grid" id="portfolioTagChecks"></div>
+      </section>
+
+      <section class="section">
+        <h2>รายละเอียดและลิงก์</h2>
+        <div class="grid">
+          <div>
+            <label for="summary">รายละเอียดสั้น</label>
+            <textarea id="summary" name="summary" rows="5"></textarea>
+          </div>
+          <div>
+            <label for="documentLinks">ลิงก์เอกสารที่เกี่ยวข้อง</label>
+            <textarea id="documentLinks" name="documentLinks" rows="5" placeholder="ระเบียบการแข่งขัน: https://...&#10;ใบสมัคร: https://..."></textarea>
+            <p class="hint">กรอกหนึ่งเอกสารต่อหนึ่งบรรทัด รูปแบบ “ชื่อเอกสาร: URL”</p>
+          </div>
+          <div>
+            <label for="sourceLink">ลิงก์ประกาศต้นทาง</label>
+            <input id="sourceLink" name="sourceLink" type="url" placeholder="https://...">
+          </div>
+          <div>
+            <label for="contactTeacher">ครูผู้ประสานงาน</label>
+            <input id="contactTeacher" name="contactTeacher">
+          </div>
+        </div>
+      </section>
+
+      <div class="actions">
+        <label class="check-item">
+          <input id="isPublished" name="isPublished" type="checkbox" checked>
+          <span>เผยแพร่ให้นักเรียนเห็น</span>
+        </label>
+        <button id="submitButton" type="submit">บันทึกข้อมูล</button>
+        <p class="status" id="formStatus" aria-live="polite"></p>
+      </div>
+    </form>
+  </main>
+
+  <script>
+    const TYPES = ['การแข่งขัน', 'จิตอาสา', 'งานแนะแนว', 'ค่าย/อบรม', 'ทุนการศึกษา', 'กิจกรรมอื่น ๆ'];
+    const CATEGORIES = ['วิทยาศาสตร์', 'คณิตศาสตร์', 'เทคโนโลยี', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคมศึกษา', 'ศิลปะ', 'กีฬา', 'สิ่งแวดล้อม', 'แนะแนวการศึกษา', 'จิตอาสา', 'ทั่วไป'];
+    const LEVELS = [
+      ['m1', 'ม.1'],
+      ['m2', 'ม.2'],
+      ['m3', 'ม.3'],
+      ['m4', 'ม.4'],
+      ['m5', 'ม.5'],
+      ['m6', 'ม.6']
+    ];
+    const INTEREST_TAGS = ['วิทยาศาสตร์', 'คณิตศาสตร์', 'เทคโนโลยี', 'Coding', 'AI / Robot', 'โครงงาน', 'ทดลอง', 'นวัตกรรม', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคมศึกษา', 'ศิลปะ', 'กีฬา', 'สิ่งแวดล้อม', 'การนำเสนอ', 'เขียนเรียงความ', 'ทำงานเป็นทีม'];
+    const FEATURE_TAGS = ['ฟรี', 'ออนไลน์', 'มีเกียรติบัตร', 'เหมาะสำหรับมือใหม่', 'แข่งขันเดี่ยว', 'แข่งขันทีม', 'มีค่าสมัคร', 'ต้องส่งผลงาน', 'มีรอบคัดเลือก', 'จำกัดจำนวนผู้สมัคร', 'รับสมัครผ่านโรงเรียน', 'สมัครเองได้'];
+    const PORTFOLIO_TAGS = ['วิทยาศาสตร์', 'วิศวกรรม', 'แพทย์ / สุขภาพ', 'คอมพิวเตอร์ / AI', 'คณิตศาสตร์', 'ภาษา', 'สังคมศาสตร์', 'รัฐศาสตร์ / กฎหมาย', 'ศิลปกรรม', 'นิเทศ / สื่อสาร', 'ธุรกิจ / บริหาร', 'สิ่งแวดล้อม', 'จิตอาสา', 'ภาวะผู้นำ', 'นวัตกรรม', 'ทักษะการนำเสนอ'];
+
+    const form = document.querySelector('#eventForm');
+    const statusText = document.querySelector('#formStatus');
+    const submitButton = document.querySelector('#submitButton');
+
+    renderSelect('type', TYPES);
+    renderSelect('category', CATEGORIES);
+    renderChecks('levelChecks', LEVELS.map(([value, label]) => ({ id: value, name: value, value, label })));
+    renderChecks('interestTagChecks', INTEREST_TAGS.map(value => ({ name: 'interestTags', value, label: value })));
+    renderChecks('featureTagChecks', FEATURE_TAGS.map(value => ({ name: 'featureTags', value, label: value })));
+    renderChecks('portfolioTagChecks', PORTFOLIO_TAGS.map(value => ({ name: 'portfolioTags', value, label: value })));
+
+    form.addEventListener('submit', function(event) {
+      event.preventDefault();
+      saveForm();
+    });
+
+    function renderSelect(id, options) {
+      const select = document.querySelector('#' + id);
+      select.innerHTML = '<option value="">เลือกข้อมูล</option>' + options.map(option => `<option value="${option}">${option}</option>`).join('');
+    }
+
+    function renderChecks(containerId, items) {
+      const container = document.querySelector('#' + containerId);
+      container.innerHTML = items.map(item => `
+        <label class="check-item">
+          <input ${item.id ? `id="${item.id}"` : ''} type="checkbox" name="${item.name}" value="${item.value}">
+          <span>${item.label}</span>
+        </label>
+      `).join('');
+    }
+
+    function saveForm() {
+      const payload = collectFormData();
+      setStatus('กำลังบันทึกข้อมูล...', '');
+      submitButton.disabled = true;
+
+      // ใช้ google.script.run เพื่อเรียกฟังก์ชันฝั่ง Apps Script โดยไม่ต้องเปิด API แยก
+      google.script.run
+        .withSuccessHandler(function(result) {
+          setStatus(result && result.message ? result.message : 'บันทึกข้อมูลเรียบร้อยแล้ว', 'success');
+          form.reset();
+          document.querySelector('#isPublished').checked = true;
+          submitButton.disabled = false;
+        })
+        .withFailureHandler(function(error) {
+          setStatus(error && error.message ? error.message : 'บันทึกไม่สำเร็จ กรุณาลองใหม่', 'error');
+          submitButton.disabled = false;
+        })
+        .saveEvent(payload);
+    }
+
+    function collectFormData() {
+      return {
+        title: valueOf('title'),
+        posterImage: valueOf('posterImage'),
+        type: valueOf('type'),
+        category: valueOf('category'),
+        organizer: valueOf('organizer'),
+        m1: checked('m1'),
+        m2: checked('m2'),
+        m3: checked('m3'),
+        m4: checked('m4'),
+        m5: checked('m5'),
+        m6: checked('m6'),
+        interestTags: selectedValues('interestTags'),
+        featureTags: selectedValues('featureTags'),
+        portfolioTags: selectedValues('portfolioTags'),
+        registerOpenDate: valueOf('registerOpenDate'),
+        registerCloseDate: valueOf('registerCloseDate'),
+        submissionDate: valueOf('submissionDate'),
+        eventDate: valueOf('eventDate'),
+        location: valueOf('location'),
+        summary: valueOf('summary'),
+        sourceLink: valueOf('sourceLink'),
+        documentLinks: valueOf('documentLinks'),
+        contactTeacher: valueOf('contactTeacher'),
+        isPublished: checked('isPublished')
+      };
+    }
+
+    function valueOf(id) {
+      return document.querySelector('#' + id).value.trim();
+    }
+
+    function checked(id) {
+      return document.querySelector('#' + id).checked;
+    }
+
+    function selectedValues(name) {
+      return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(input => input.value);
+    }
+
+    function setStatus(message, type) {
+      statusText.textContent = message;
+      statusText.className = 'status';
+      if (type) statusText.classList.add('is-' + type);
+    }
+  </script>
+</body>
+</html>
