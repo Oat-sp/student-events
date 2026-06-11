@@ -16,6 +16,8 @@ const LEVEL_LABELS = {
   m6: 'ม.6'
 };
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const EVENTS_STORAGE_KEY = 'student_events_data_cache_v1';
+const FETCH_TIMEOUT_MS = 8000;
 
 const state = {
   events: [],
@@ -150,7 +152,6 @@ function bindEvents() {
 }
 
 async function loadEvents() {
-  setLoading(true);
   hideError();
 
   if (DATA_URL.startsWith('PUT_YOUR_')) {
@@ -160,19 +161,84 @@ async function loadEvents() {
     return;
   }
 
-  try {
-    const response = await fetch(DATA_URL, { cache: 'no-store' });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-    const data = await response.json();
-    const rows = Array.isArray(data) ? data : data.events || [];
-    state.events = rows.map(normalizeEvent);
+  const cachedData = readCachedEventsData();
+  if (cachedData) {
+    applyEventsData(cachedData);
     setLoading(false);
+    render();
+    refreshEvents({ hasCache: true });
+    return;
+  }
+
+  setLoading(true);
+  await refreshEvents({ hasCache: false });
+}
+
+async function refreshEvents(options) {
+  const hasCache = options && options.hasCache;
+
+  try {
+    const data = await fetchEventsData();
+    writeCachedEventsData(data);
+    applyEventsData(data);
+    hideError();
     render();
   } catch (error) {
+    if (hasCache) {
+      hideError();
+      showToast('แสดงข้อมูลเดิมที่บันทึกไว้ อัปเดตข้อมูลใหม่ไม่ได้ชั่วคราว');
+    } else {
+      showError('โหลดข้อมูลไม่สำเร็จ กรุณาตรวจสอบ URL, สิทธิ์ Web App และการ Deploy ล่าสุด');
+      render();
+    }
+  } finally {
     setLoading(false);
-    showError('โหลดข้อมูลไม่สำเร็จ กรุณาตรวจสอบ URL, สิทธิ์ Web App และการ Deploy ล่าสุด');
-    render();
+  }
+}
+
+async function fetchEventsData() {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(DATA_URL, { signal: controller.signal });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
+function applyEventsData(data) {
+  const rows = Array.isArray(data) ? data : data.events || [];
+  state.events = rows.map(normalizeEvent);
+}
+
+function readCachedEventsData() {
+  try {
+    const raw = localStorage.getItem(EVENTS_STORAGE_KEY);
+    if (!raw) return null;
+
+    const cache = JSON.parse(raw);
+    if (!cache || !cache.data) return null;
+
+    const rows = Array.isArray(cache.data) ? cache.data : cache.data.events;
+    if (!Array.isArray(rows)) return null;
+
+    return cache.data;
+  } catch (error) {
+    return null;
+  }
+}
+
+function writeCachedEventsData(data) {
+  try {
+    localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify({
+      savedAt: new Date().toISOString(),
+      data
+    }));
+  } catch (error) {
+    // localStorage อาจเต็มหรือถูกปิดไว้ หน้าเว็บยังใช้ข้อมูลสดได้ตามปกติ
   }
 }
 

@@ -1,6 +1,8 @@
 var SHEET_NAME = 'events';
 var SPREADSHEET_NAME = 'student-events-data';
 var SPREADSHEET_ID = '1Ij0EfvD8AW8gz3tffG1Yz7fPJMHa2vnh5MgnFau_bss';
+var EVENTS_CACHE_KEY = 'events_json';
+var EVENTS_CACHE_SECONDS = 600;
 
 var HEADERS = [
   'timestamp',
@@ -42,7 +44,7 @@ var TIME_KEYS = ['registerOpenTime', 'registerCloseTime'];
 function doGet(e) {
   // ใช้ endpoint เดียวกันทั้งฟอร์มครูและ JSON สำหรับ GitHub Pages
   if (e && e.parameter && e.parameter.action === 'events') {
-    return createJsonResponse_(getEvents());
+    return createJsonResponse_(getEventsJson_());
   }
 
   return HtmlService
@@ -66,6 +68,7 @@ function saveEvent(form) {
   });
 
   sheet.appendRow(row);
+  clearEventsCache_();
 
   return {
     ok: true,
@@ -74,6 +77,20 @@ function saveEvent(form) {
 }
 
 function getEvents() {
+  return JSON.parse(getEventsJson_());
+}
+
+function getEventsJson_() {
+  var cachedJson = getCachedEventsJson_();
+  if (cachedJson) return cachedJson;
+
+  var payload = buildEventsPayload_();
+  var json = JSON.stringify(payload);
+  cacheEventsJson_(json);
+  return json;
+}
+
+function buildEventsPayload_() {
   var sheet = ensureEventsSheet_();
   var values = sheet.getDataRange().getValues();
 
@@ -100,6 +117,30 @@ function getEvents() {
     generatedAt: new Date().toISOString(),
     events: events
   };
+}
+
+function getCachedEventsJson_() {
+  try {
+    return CacheService.getScriptCache().get(EVENTS_CACHE_KEY);
+  } catch (error) {
+    return null;
+  }
+}
+
+function cacheEventsJson_(json) {
+  try {
+    CacheService.getScriptCache().put(EVENTS_CACHE_KEY, json, EVENTS_CACHE_SECONDS);
+  } catch (error) {
+    // ถ้า JSON ใหญ่เกิน cache quota ให้ส่งข้อมูลสดต่อไปโดยไม่ทำให้ API ล้ม
+  }
+}
+
+function clearEventsCache_() {
+  try {
+    CacheService.getScriptCache().remove(EVENTS_CACHE_KEY);
+  } catch (error) {
+    // การล้าง cache ไม่ควรทำให้การบันทึกข้อมูลล้มเหลว
+  }
 }
 
 function ensureEventsSheet_() {
@@ -251,8 +292,9 @@ function getCellValue_(row, headerMap, header) {
 }
 
 function createJsonResponse_(payload) {
+  var json = typeof payload === 'string' ? payload : JSON.stringify(payload);
   return ContentService
-    .createTextOutput(JSON.stringify(payload))
+    .createTextOutput(json)
     .setMimeType(ContentService.MimeType.JSON);
 }
 
