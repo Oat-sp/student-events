@@ -151,16 +151,6 @@
       flex: 0 0 auto;
     }
 
-    .check-item.is-locked {
-      background: #edf7f5;
-      border-color: rgba(15, 118, 110, 0.32);
-      color: var(--brand-dark);
-    }
-
-    .check-item input:disabled {
-      cursor: not-allowed;
-    }
-
     .hint {
       margin: 6px 0 0;
       color: var(--muted);
@@ -269,7 +259,7 @@
           <div>
             <label for="location">สถานที่</label>
             <input id="location" name="location">
-            <p class="hint">ต้องกรอกเมื่อเลือกออนไซต์หรือผสม</p>
+            <p class="hint">ต้องกรอกเมื่อเลือกออนไซต์หรือออนไลน์+ออนไซต์</p>
           </div>
         </div>
       </section>
@@ -381,7 +371,9 @@
   <script>
     const TYPES = ['การแข่งขัน', 'จิตอาสา', 'งานแนะแนว', 'ค่าย/อบรม', 'ทุนการศึกษา', 'กิจกรรมอื่น ๆ'];
     const CATEGORIES = ['วิทยาศาสตร์', 'คณิตศาสตร์', 'เทคโนโลยี', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคมศึกษา', 'ศิลปะ', 'กีฬา', 'สิ่งแวดล้อม', 'แนะแนวการศึกษา', 'จิตอาสา', 'ทั่วไป'];
-    const ACTIVITY_FORMATS = ['ออนไลน์', 'ออนไซต์', 'ผสม'];
+    const MIXED_ACTIVITY_FORMAT = 'ออนไลน์+ออนไซต์';
+    const LEGACY_MIXED_ACTIVITY_FORMAT = 'ผสม';
+    const ACTIVITY_FORMATS = ['ออนไลน์', 'ออนไซต์', MIXED_ACTIVITY_FORMAT];
     const LEVELS = [
       ['m1', 'ม.1'],
       ['m2', 'ม.2'],
@@ -404,7 +396,7 @@
     renderSelect('activityFormat', ACTIVITY_FORMATS);
     renderChecks('levelChecks', LEVELS.map(([value, label]) => ({ id: value, name: value, value, label })));
     renderChecks('interestTagChecks', INTEREST_TAGS.map(value => ({ name: 'interestTags', value, label: value })));
-    renderChecks('featureTagChecks', FEATURE_TAGS.map(value => ({ name: 'featureTags', value, label: value, locked: AUTO_FEATURE_TAGS.includes(value) })));
+    renderChecks('featureTagChecks', FEATURE_TAGS.filter(value => !AUTO_FEATURE_TAGS.includes(value)).map(value => ({ name: 'featureTags', value, label: value })));
     renderChecks('portfolioTagChecks', PORTFOLIO_TAGS.map(value => ({ name: 'portfolioTags', value, label: value })));
     updateAutoFields();
 
@@ -426,8 +418,8 @@
     function renderChecks(containerId, items) {
       const container = document.querySelector('#' + containerId);
       container.innerHTML = items.map(item => `
-        <label class="check-item ${item.locked ? 'is-locked' : ''}">
-          <input ${item.id ? `id="${item.id}"` : ''} ${item.locked ? 'data-auto-feature="true" disabled' : ''} type="checkbox" name="${item.name}" value="${item.value}">
+        <label class="check-item">
+          <input ${item.id ? `id="${item.id}"` : ''} type="checkbox" name="${item.name}" value="${item.value}">
           <span>${item.label}</span>
         </label>
       `).join('');
@@ -459,6 +451,7 @@
       updateAutoFields();
       const teamMemberCount = normalizeTeamMemberCount(valueOf('teamMemberCount'));
       const registrationFee = normalizeRegistrationFee(valueOf('registrationFee'));
+      const activityFormat = normalizeActivityFormat(valueOf('activityFormat'));
 
       return {
         title: valueOf('title'),
@@ -466,7 +459,7 @@
         type: valueOf('type'),
         category: valueOf('category'),
         organizer: valueOf('organizer'),
-        activityFormat: valueOf('activityFormat'),
+        activityFormat,
         location: valueOf('location'),
         m1: checked('m1'),
         m2: checked('m2'),
@@ -475,7 +468,7 @@
         m5: checked('m5'),
         m6: checked('m6'),
         interestTags: selectedValues('interestTags'),
-        featureTags: buildFeatureTags(selectedValues('featureTags'), teamMemberCount, registrationFee, valueOf('activityFormat')),
+        featureTags: buildFeatureTags(selectedValues('featureTags'), teamMemberCount, registrationFee, activityFormat),
         portfolioTags: selectedValues('portfolioTags'),
         registerOpenDate: valueOf('registerOpenDate'),
         registerOpenTime: valueOf('registerOpenTime'),
@@ -514,15 +507,10 @@
     function updateAutoFields() {
       const teamMemberCount = normalizeTeamMemberCount(valueOf('teamMemberCount'));
       const registrationFee = normalizeRegistrationFee(valueOf('registrationFee'));
-      const activityFormat = valueOf('activityFormat');
+      const activityFormat = normalizeActivityFormat(valueOf('activityFormat'));
       const locationInput = document.querySelector('#location');
-      const featureTags = buildFeatureTags(selectedValues('featureTags'), teamMemberCount, registrationFee, activityFormat);
 
-      locationInput.required = activityFormat === 'ออนไซต์' || activityFormat === 'ผสม';
-
-      document.querySelectorAll('[data-auto-feature="true"]').forEach(input => {
-        input.checked = featureTags.includes(input.value);
-      });
+      locationInput.required = activityFormat === 'ออนไซต์' || activityFormat === MIXED_ACTIVITY_FORMAT;
     }
 
     function buildFeatureTags(values, teamMemberCount, registrationFee, activityFormat) {
@@ -531,15 +519,23 @@
       tags.push(teamMemberCount === 1 ? 'แข่งขันเดี่ยว' : 'แข่งขันทีม');
       tags.push(registrationFee > 0 ? 'มีค่าสมัคร' : 'ฟรี');
 
-      if (activityFormat === 'ออนไลน์' || activityFormat === 'ผสม') {
+      const normalizedActivityFormat = normalizeActivityFormat(activityFormat);
+
+      if (normalizedActivityFormat === 'ออนไลน์' || normalizedActivityFormat === MIXED_ACTIVITY_FORMAT) {
         tags.push('ออนไลน์');
       }
 
-      if (activityFormat === 'ออนไซต์' || activityFormat === 'ผสม') {
+      if (normalizedActivityFormat === 'ออนไซต์' || normalizedActivityFormat === MIXED_ACTIVITY_FORMAT) {
         tags.push('ต้องเดินทาง');
       }
 
       return Array.from(new Set(tags));
+    }
+
+    function normalizeActivityFormat(value) {
+      const text = String(value || '').trim();
+      if (text === LEGACY_MIXED_ACTIVITY_FORMAT) return MIXED_ACTIVITY_FORMAT;
+      return ACTIVITY_FORMATS.includes(text) ? text : '';
     }
 
     function normalizeTeamMemberCount(value) {

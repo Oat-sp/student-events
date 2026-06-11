@@ -3,7 +3,7 @@ var SPREADSHEET_NAME = 'student-events-data';
 var SPREADSHEET_ID = '1Ij0EfvD8AW8gz3tffG1Yz7fPJMHa2vnh5MgnFau_bss';
 var EVENTS_CACHE_KEY = 'events_json';
 var EVENTS_CACHE_SECONDS = 600;
-var EVENTS_SCHEMA_VERSION = '20260611-auto-tags';
+var EVENTS_SCHEMA_VERSION = '20260611-format-label';
 
 var HEADERS = [
   'timestamp',
@@ -45,7 +45,9 @@ var DATE_KEYS = ['registerOpenDate', 'registerCloseDate', 'submissionDate', 'eve
 var TIME_KEYS = ['registerOpenTime', 'registerCloseTime'];
 var AUTO_FEATURE_TAGS = ['แข่งขันเดี่ยว', 'แข่งขันทีม', 'ฟรี', 'มีค่าสมัคร', 'ออนไลน์', 'ต้องเดินทาง'];
 var REMOVED_INTEREST_TAGS = ['ทำงานเป็นทีม'];
-var ACTIVITY_FORMATS = ['ออนไลน์', 'ออนไซต์', 'ผสม'];
+var MIXED_ACTIVITY_FORMAT = 'ออนไลน์+ออนไซต์';
+var LEGACY_MIXED_ACTIVITY_FORMAT = 'ผสม';
+var ACTIVITY_FORMATS = ['ออนไลน์', 'ออนไซต์', MIXED_ACTIVITY_FORMAT];
 
 function doGet(e) {
   // ใช้ endpoint เดียวกันทั้งฟอร์มครูและ JSON สำหรับ GitHub Pages
@@ -404,11 +406,11 @@ function buildFeatureTags_(value, data, options) {
   if (options.hasActivityFormat === false) {
     preserveTags_(tags, originalTags, ['ออนไลน์', 'ต้องเดินทาง']);
   } else {
-    if (activityFormat === 'ออนไลน์' || activityFormat === 'ผสม') {
+    if (activityFormat === 'ออนไลน์' || activityFormat === MIXED_ACTIVITY_FORMAT) {
       tags.push('ออนไลน์');
     }
 
-    if (activityFormat === 'ออนไซต์' || activityFormat === 'ผสม') {
+    if (activityFormat === 'ออนไซต์' || activityFormat === MIXED_ACTIVITY_FORMAT) {
       tags.push('ต้องเดินทาง');
     }
   }
@@ -438,6 +440,7 @@ function normalizeRegistrationFee_(value) {
 
 function normalizeActivityFormat_(value) {
   var text = cleanText_(value);
+  if (text === LEGACY_MIXED_ACTIVITY_FORMAT) return MIXED_ACTIVITY_FORMAT;
   return ACTIVITY_FORMATS.indexOf(text) !== -1 ? text : '';
 }
 
