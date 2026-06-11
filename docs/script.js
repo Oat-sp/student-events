@@ -3,9 +3,10 @@ const DATA_URL = 'https://script.google.com/macros/s/AKfycbwUt_kyuMqXbPnEWx2CLND
 
 const TYPES = ['การแข่งขัน', 'จิตอาสา', 'งานแนะแนว', 'ค่าย/อบรม', 'ทุนการศึกษา', 'กิจกรรมอื่น ๆ'];
 const CATEGORIES = ['วิทยาศาสตร์', 'คณิตศาสตร์', 'เทคโนโลยี', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคมศึกษา', 'ศิลปะ', 'กีฬา', 'สิ่งแวดล้อม', 'แนะแนวการศึกษา', 'จิตอาสา', 'ทั่วไป'];
-const INTEREST_TAGS = ['วิทยาศาสตร์', 'คณิตศาสตร์', 'เทคโนโลยี', 'Coding', 'AI / Robot', 'โครงงาน', 'ทดลอง', 'นวัตกรรม', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคมศึกษา', 'ศิลปะ', 'กีฬา', 'สิ่งแวดล้อม', 'การนำเสนอ', 'เขียนเรียงความ', 'ทำงานเป็นทีม', 'การตอบปัญหา', 'การสอบ'];
+const INTEREST_TAGS = ['วิทยาศาสตร์', 'คณิตศาสตร์', 'เทคโนโลยี', 'Coding', 'AI / Robot', 'โครงงาน', 'ทดลอง', 'นวัตกรรม', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคมศึกษา', 'ศิลปะ', 'กีฬา', 'สิ่งแวดล้อม', 'การนำเสนอ', 'เขียนเรียงความ', 'การตอบปัญหา', 'การสอบ'];
 const FEATURE_TAGS = ['ฟรี', 'ออนไลน์', 'มีเกียรติบัตร', 'เหมาะสำหรับมือใหม่', 'แข่งขันเดี่ยว', 'แข่งขันทีม', 'มีค่าสมัคร', 'ต้องส่งผลงาน', 'มีรอบคัดเลือก', 'จำกัดจำนวนผู้สมัคร', 'ต้องเดินทาง'];
 const PORTFOLIO_TAGS = ['วิชาการ', 'วิทยาศาสตร์', 'วิศวกรรม', 'แพทย์ / สุขภาพ', 'คอมพิวเตอร์ / AI', 'คณิตศาสตร์', 'ภาษา', 'สังคมศาสตร์', 'รัฐศาสตร์ / กฎหมาย', 'ศิลปกรรม', 'นิเทศ / สื่อสาร', 'ธุรกิจ / บริหาร', 'สิ่งแวดล้อม', 'จิตอาสา', 'ภาวะผู้นำ', 'นวัตกรรม', 'ทักษะการนำเสนอ'];
+const AUTO_FEATURE_TAGS = ['แข่งขันเดี่ยว', 'แข่งขันทีม', 'ฟรี', 'มีค่าสมัคร', 'ออนไลน์', 'ต้องเดินทาง'];
 const LEVEL_KEYS = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6'];
 const LEVEL_LABELS = {
   m1: 'ม.1',
@@ -16,7 +17,7 @@ const LEVEL_LABELS = {
   m6: 'ม.6'
 };
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const EVENTS_STORAGE_KEY = 'student_events_data_cache_v1';
+const EVENTS_STORAGE_KEY = 'student_events_data_cache_v2';
 const FETCH_TIMEOUT_MS = 8000;
 
 const state = {
@@ -244,6 +245,11 @@ function writeCachedEventsData(data) {
 
 function normalizeEvent(rawEvent) {
   const eventStartDate = stringValue(rawEvent.eventStartDate) || stringValue(rawEvent.eventDate);
+  const teamMemberCount = normalizeTeamMemberCount(rawEvent.teamMemberCount);
+  const rawRegistrationFee = stringValue(rawEvent.registrationFee);
+  const registrationFee = normalizeRegistrationFee(rawEvent.registrationFee);
+  const activityFormat = stringValue(rawEvent.activityFormat);
+  const rawFeatureTags = toArray(rawEvent.featureTags);
 
   const event = {
     id: createEventId(rawEvent),
@@ -259,8 +265,14 @@ function normalizeEvent(rawEvent) {
     m4: toBoolean(rawEvent.m4),
     m5: toBoolean(rawEvent.m5),
     m6: toBoolean(rawEvent.m6),
-    interestTags: toArray(rawEvent.interestTags),
-    featureTags: toArray(rawEvent.featureTags),
+    teamMemberCount,
+    registrationFee,
+    activityFormat,
+    interestTags: toArray(rawEvent.interestTags).filter(tag => tag !== 'ทำงานเป็นทีม'),
+    featureTags: buildFeatureTags(rawFeatureTags, teamMemberCount, registrationFee, activityFormat, {
+      hasRegistrationFee: rawRegistrationFee !== '',
+      hasActivityFormat: activityFormat !== ''
+    }),
     portfolioTags: toArray(rawEvent.portfolioTags),
     registerOpenDate: stringValue(rawEvent.registerOpenDate),
     registerOpenTime: stringValue(rawEvent.registerOpenTime),
@@ -271,7 +283,6 @@ function normalizeEvent(rawEvent) {
     eventEndDate: stringValue(rawEvent.eventEndDate),
     eventDate: eventStartDate,
     location: stringValue(rawEvent.location),
-    teamMemberCount: stringValue(rawEvent.teamMemberCount),
     summary: stringValue(rawEvent.summary),
     sourceLink: safeUrl(rawEvent.sourceLink),
     documentLinks: stringValue(rawEvent.documentLinks),
@@ -408,11 +419,13 @@ function renderEventCard(event) {
         ${event.summary ? `<p class="summary">${escapeHTML(event.summary)}</p>` : ''}
         <div class="meta-list">
           ${event.organizer ? `<div><strong>ผู้จัด:</strong> ${escapeHTML(event.organizer)}</div>` : ''}
+          ${event.activityFormat ? `<div><strong>รูปแบบกิจกรรม:</strong> ${escapeHTML(event.activityFormat)}</div>` : ''}
           ${event.registerOpenDate || event.registerCloseDate ? `<div><strong>รับสมัคร:</strong> ${formatRegistrationRange(event)}</div>` : ''}
           ${event.submissionDate ? `<div><strong>ส่งผลงาน:</strong> ${formatThaiDate(event.submissionDate)}</div>` : ''}
           ${event.eventStartDate || event.eventEndDate ? `<div><strong>วันกิจกรรม:</strong> ${formatEventDateRange(event)}</div>` : ''}
           ${event.location ? `<div><strong>สถานที่:</strong> ${escapeHTML(event.location)}</div>` : ''}
-          ${event.teamMemberCount ? `<div><strong>จำนวนสมาชิกทีม:</strong> ${escapeHTML(event.teamMemberCount)}</div>` : ''}
+          ${shouldShowTeamMemberCount(event) ? `<div><strong>จำนวนสมาชิกทีม:</strong> ${escapeHTML(formatTeamMemberCount(event.teamMemberCount))}</div>` : ''}
+          ${shouldShowRegistrationFee(event) ? `<div><strong>ค่าสมัคร:</strong> ${escapeHTML(formatRegistrationFee(event.registrationFee))}</div>` : ''}
           ${event.contactTeacher ? `<div><strong>ติดต่อ:</strong> ${escapeHTML(event.contactTeacher)}</div>` : ''}
         </div>
         ${renderTags(event)}
@@ -542,8 +555,10 @@ function buildSummaryText(events) {
       `รับสมัคร: ${formatRegistrationRange(event)}`,
       event.submissionDate ? `ส่งผลงาน: ${formatThaiDate(event.submissionDate)}` : '',
       event.eventStartDate || event.eventEndDate ? `วันกิจกรรม: ${formatEventDateRange(event)}` : '',
+      event.activityFormat ? `รูปแบบกิจกรรม: ${event.activityFormat}` : '',
       event.location ? `สถานที่: ${event.location}` : '',
-      event.teamMemberCount ? `จำนวนสมาชิกทีม: ${event.teamMemberCount}` : '',
+      shouldShowTeamMemberCount(event) ? `จำนวนสมาชิกทีม: ${formatTeamMemberCount(event.teamMemberCount)}` : '',
+      shouldShowRegistrationFee(event) ? `ค่าสมัคร: ${formatRegistrationFee(event.registrationFee)}` : '',
       event.summary ? `รายละเอียด: ${event.summary}` : '',
       event.sourceLink ? `ประกาศต้นทาง: ${event.sourceLink}` : '',
       event.contactTeacher ? `ติดต่อ: ${event.contactTeacher}` : ''
@@ -560,8 +575,10 @@ function buildEventPromotionText(event) {
     `รับสมัคร: ${formatRegistrationRange(event)}`,
     event.submissionDate ? `ส่งผลงาน: ${formatThaiDate(event.submissionDate)}` : '',
     event.eventStartDate || event.eventEndDate ? `วันกิจกรรม: ${formatEventDateRange(event)}` : '',
+    event.activityFormat ? `รูปแบบกิจกรรม: ${event.activityFormat}` : '',
     event.location ? `สถานที่: ${event.location}` : '',
-    event.teamMemberCount ? `จำนวนสมาชิกทีม: ${event.teamMemberCount}` : '',
+    shouldShowTeamMemberCount(event) ? `จำนวนสมาชิกทีม: ${formatTeamMemberCount(event.teamMemberCount)}` : '',
+    shouldShowRegistrationFee(event) ? `ค่าสมัคร: ${formatRegistrationFee(event.registrationFee)}` : '',
     event.summary ? `รายละเอียด: ${event.summary}` : '',
     event.sourceLink ? `ประกาศต้นทาง: ${event.sourceLink}` : '',
     event.contactTeacher ? `ติดต่อครูผู้ประสานงาน: ${event.contactTeacher}` : ''
@@ -738,6 +755,28 @@ function formatTime(value) {
   return `${String(Number(match[1])).padStart(2, '0')}:${match[2]}`;
 }
 
+function shouldShowTeamMemberCount(event) {
+  return normalizeTeamMemberCount(event.teamMemberCount) !== 1;
+}
+
+function formatTeamMemberCount(value) {
+  return `${normalizeTeamMemberCount(value)} คน`;
+}
+
+function shouldShowRegistrationFee(event) {
+  return normalizeRegistrationFee(event.registrationFee) > 0;
+}
+
+function formatRegistrationFee(value) {
+  return `${formatNumber(normalizeRegistrationFee(value))} บาท`;
+}
+
+function formatNumber(value) {
+  return new Intl.NumberFormat('th-TH', {
+    maximumFractionDigits: 2
+  }).format(value);
+}
+
 function formatDateRange(start, end) {
   const startText = start ? formatThaiDate(start) : '';
   const endText = end ? formatThaiDate(end) : '';
@@ -827,6 +866,51 @@ function stringValue(value) {
 function toArray(value) {
   if (Array.isArray(value)) return value.map(stringValue).filter(Boolean);
   return stringValue(value).split(',').map(item => item.trim()).filter(Boolean);
+}
+
+function buildFeatureTags(values, teamMemberCount, registrationFee, activityFormat, options = {}) {
+  const originalTags = toArray(values);
+  const tags = originalTags.filter(tag => !AUTO_FEATURE_TAGS.includes(tag));
+
+  tags.push(normalizeTeamMemberCount(teamMemberCount) === 1 ? 'แข่งขันเดี่ยว' : 'แข่งขันทีม');
+
+  if (options.hasRegistrationFee === false) {
+    preserveTags(tags, originalTags, ['ฟรี', 'มีค่าสมัคร']);
+  } else {
+    tags.push(normalizeRegistrationFee(registrationFee) > 0 ? 'มีค่าสมัคร' : 'ฟรี');
+  }
+
+  if (options.hasActivityFormat === false) {
+    preserveTags(tags, originalTags, ['ออนไลน์', 'ต้องเดินทาง']);
+  } else {
+    if (activityFormat === 'ออนไลน์' || activityFormat === 'ผสม') {
+      tags.push('ออนไลน์');
+    }
+
+    if (activityFormat === 'ออนไซต์' || activityFormat === 'ผสม') {
+      tags.push('ต้องเดินทาง');
+    }
+  }
+
+  return Array.from(new Set(tags));
+}
+
+function preserveTags(targetTags, sourceTags, tagsToPreserve) {
+  tagsToPreserve.forEach(tag => {
+    if (sourceTags.includes(tag)) {
+      targetTags.push(tag);
+    }
+  });
+}
+
+function normalizeTeamMemberCount(value) {
+  const number = parseInt(stringValue(value).replace(/,/g, ''), 10);
+  return Number.isFinite(number) && number >= 1 ? number : 1;
+}
+
+function normalizeRegistrationFee(value) {
+  const number = Number(stringValue(value).replace(/,/g, ''));
+  return Number.isFinite(number) && number >= 0 ? number : 0;
 }
 
 function toBoolean(value) {

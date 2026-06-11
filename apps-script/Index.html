@@ -151,6 +151,16 @@
       flex: 0 0 auto;
     }
 
+    .check-item.is-locked {
+      background: #edf7f5;
+      border-color: rgba(15, 118, 110, 0.32);
+      color: var(--brand-dark);
+    }
+
+    .check-item input:disabled {
+      cursor: not-allowed;
+    }
+
     .hint {
       margin: 6px 0 0;
       color: var(--muted);
@@ -246,9 +256,20 @@
             <label for="organizer">ผู้จัดกิจกรรม/การแข่งขัน</label>
             <input id="organizer" name="organizer">
           </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>รูปแบบและสถานที่</h2>
+        <div class="grid">
+          <div>
+            <label for="activityFormat">รูปแบบกิจกรรม</label>
+            <select id="activityFormat" name="activityFormat" required></select>
+          </div>
           <div>
             <label for="location">สถานที่</label>
             <input id="location" name="location">
+            <p class="hint">ต้องกรอกเมื่อเลือกออนไซต์หรือผสม</p>
           </div>
         </div>
       </section>
@@ -256,6 +277,22 @@
       <section class="section">
         <h2>ระดับชั้นที่เหมาะสม</h2>
         <div class="check-grid" id="levelChecks"></div>
+      </section>
+
+      <section class="section">
+        <h2>ทีมและค่าสมัคร</h2>
+        <div class="grid">
+          <div>
+            <label for="teamMemberCount">จำนวนสมาชิกในทีม</label>
+            <input id="teamMemberCount" name="teamMemberCount" type="number" min="1" step="1" value="1" inputmode="numeric">
+            <p class="hint">ถ้าเป็น 1 ระบบจะถือว่าเป็นแข่งขันเดี่ยวและไม่แสดงจำนวนสมาชิกบนหน้าเว็บนักเรียน</p>
+          </div>
+          <div>
+            <label for="registrationFee">ค่าสมัคร (บาท)</label>
+            <input id="registrationFee" name="registrationFee" type="number" min="0" step="1" value="0" inputmode="decimal">
+            <p class="hint">ถ้าเป็น 0 ระบบจะติดแท็กฟรีโดยอัตโนมัติ</p>
+          </div>
+        </div>
       </section>
 
       <section class="section">
@@ -327,11 +364,6 @@
             <label for="contactTeacher">ครูผู้ประสานงาน</label>
             <input id="contactTeacher" name="contactTeacher">
           </div>
-          <div>
-            <label for="teamMemberCount">จำนวนสมาชิกในทีม</label>
-            <input id="teamMemberCount" name="teamMemberCount" inputmode="numeric" placeholder="เช่น 1 คน, 2-3 คน">
-            <p class="hint">ถ้าเว้นว่าง ระบบจะไม่แสดงข้อมูลนี้บนหน้าเว็บนักเรียน</p>
-          </div>
         </div>
       </section>
 
@@ -349,6 +381,7 @@
   <script>
     const TYPES = ['การแข่งขัน', 'จิตอาสา', 'งานแนะแนว', 'ค่าย/อบรม', 'ทุนการศึกษา', 'กิจกรรมอื่น ๆ'];
     const CATEGORIES = ['วิทยาศาสตร์', 'คณิตศาสตร์', 'เทคโนโลยี', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคมศึกษา', 'ศิลปะ', 'กีฬา', 'สิ่งแวดล้อม', 'แนะแนวการศึกษา', 'จิตอาสา', 'ทั่วไป'];
+    const ACTIVITY_FORMATS = ['ออนไลน์', 'ออนไซต์', 'ผสม'];
     const LEVELS = [
       ['m1', 'ม.1'],
       ['m2', 'ม.2'],
@@ -357,9 +390,10 @@
       ['m5', 'ม.5'],
       ['m6', 'ม.6']
     ];
-    const INTEREST_TAGS = ['วิทยาศาสตร์', 'คณิตศาสตร์', 'เทคโนโลยี', 'Coding', 'AI / Robot', 'โครงงาน', 'ทดลอง', 'นวัตกรรม', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคมศึกษา', 'ศิลปะ', 'กีฬา', 'สิ่งแวดล้อม', 'การนำเสนอ', 'เขียนเรียงความ', 'ทำงานเป็นทีม', 'การตอบปัญหา', 'การสอบ'];
+    const INTEREST_TAGS = ['วิทยาศาสตร์', 'คณิตศาสตร์', 'เทคโนโลยี', 'Coding', 'AI / Robot', 'โครงงาน', 'ทดลอง', 'นวัตกรรม', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคมศึกษา', 'ศิลปะ', 'กีฬา', 'สิ่งแวดล้อม', 'การนำเสนอ', 'เขียนเรียงความ', 'การตอบปัญหา', 'การสอบ'];
     const FEATURE_TAGS = ['ฟรี', 'ออนไลน์', 'มีเกียรติบัตร', 'เหมาะสำหรับมือใหม่', 'แข่งขันเดี่ยว', 'แข่งขันทีม', 'มีค่าสมัคร', 'ต้องส่งผลงาน', 'มีรอบคัดเลือก', 'จำกัดจำนวนผู้สมัคร', 'ต้องเดินทาง'];
     const PORTFOLIO_TAGS = ['วิชาการ', 'วิทยาศาสตร์', 'วิศวกรรม', 'แพทย์ / สุขภาพ', 'คอมพิวเตอร์ / AI', 'คณิตศาสตร์', 'ภาษา', 'สังคมศาสตร์', 'รัฐศาสตร์ / กฎหมาย', 'ศิลปกรรม', 'นิเทศ / สื่อสาร', 'ธุรกิจ / บริหาร', 'สิ่งแวดล้อม', 'จิตอาสา', 'ภาวะผู้นำ', 'นวัตกรรม', 'ทักษะการนำเสนอ'];
+    const AUTO_FEATURE_TAGS = ['แข่งขันเดี่ยว', 'แข่งขันทีม', 'ฟรี', 'มีค่าสมัคร', 'ออนไลน์', 'ต้องเดินทาง'];
 
     const form = document.querySelector('#eventForm');
     const statusText = document.querySelector('#formStatus');
@@ -367,14 +401,21 @@
 
     renderSelect('type', TYPES);
     renderSelect('category', CATEGORIES);
+    renderSelect('activityFormat', ACTIVITY_FORMATS);
     renderChecks('levelChecks', LEVELS.map(([value, label]) => ({ id: value, name: value, value, label })));
     renderChecks('interestTagChecks', INTEREST_TAGS.map(value => ({ name: 'interestTags', value, label: value })));
-    renderChecks('featureTagChecks', FEATURE_TAGS.map(value => ({ name: 'featureTags', value, label: value })));
+    renderChecks('featureTagChecks', FEATURE_TAGS.map(value => ({ name: 'featureTags', value, label: value, locked: AUTO_FEATURE_TAGS.includes(value) })));
     renderChecks('portfolioTagChecks', PORTFOLIO_TAGS.map(value => ({ name: 'portfolioTags', value, label: value })));
+    updateAutoFields();
 
     form.addEventListener('submit', function(event) {
       event.preventDefault();
       saveForm();
+    });
+
+    ['teamMemberCount', 'registrationFee', 'activityFormat'].forEach(id => {
+      document.querySelector('#' + id).addEventListener('input', updateAutoFields);
+      document.querySelector('#' + id).addEventListener('change', updateAutoFields);
     });
 
     function renderSelect(id, options) {
@@ -385,8 +426,8 @@
     function renderChecks(containerId, items) {
       const container = document.querySelector('#' + containerId);
       container.innerHTML = items.map(item => `
-        <label class="check-item">
-          <input ${item.id ? `id="${item.id}"` : ''} type="checkbox" name="${item.name}" value="${item.value}">
+        <label class="check-item ${item.locked ? 'is-locked' : ''}">
+          <input ${item.id ? `id="${item.id}"` : ''} ${item.locked ? 'data-auto-feature="true" disabled' : ''} type="checkbox" name="${item.name}" value="${item.value}">
           <span>${item.label}</span>
         </label>
       `).join('');
@@ -403,6 +444,8 @@
           setStatus(result && result.message ? result.message : 'บันทึกข้อมูลเรียบร้อยแล้ว', 'success');
           form.reset();
           document.querySelector('#isPublished').checked = true;
+          setDefaultAutoInputs();
+          updateAutoFields();
           submitButton.disabled = false;
         })
         .withFailureHandler(function(error) {
@@ -413,12 +456,18 @@
     }
 
     function collectFormData() {
+      updateAutoFields();
+      const teamMemberCount = normalizeTeamMemberCount(valueOf('teamMemberCount'));
+      const registrationFee = normalizeRegistrationFee(valueOf('registrationFee'));
+
       return {
         title: valueOf('title'),
         posterImage: valueOf('posterImage'),
         type: valueOf('type'),
         category: valueOf('category'),
         organizer: valueOf('organizer'),
+        activityFormat: valueOf('activityFormat'),
+        location: valueOf('location'),
         m1: checked('m1'),
         m2: checked('m2'),
         m3: checked('m3'),
@@ -426,7 +475,7 @@
         m5: checked('m5'),
         m6: checked('m6'),
         interestTags: selectedValues('interestTags'),
-        featureTags: selectedValues('featureTags'),
+        featureTags: buildFeatureTags(selectedValues('featureTags'), teamMemberCount, registrationFee, valueOf('activityFormat')),
         portfolioTags: selectedValues('portfolioTags'),
         registerOpenDate: valueOf('registerOpenDate'),
         registerOpenTime: valueOf('registerOpenTime'),
@@ -435,8 +484,8 @@
         submissionDate: valueOf('submissionDate'),
         eventStartDate: valueOf('eventStartDate'),
         eventEndDate: valueOf('eventEndDate'),
-        location: valueOf('location'),
-        teamMemberCount: valueOf('teamMemberCount'),
+        teamMemberCount,
+        registrationFee,
         summary: valueOf('summary'),
         sourceLink: valueOf('sourceLink'),
         documentLinks: valueOf('documentLinks'),
@@ -455,6 +504,52 @@
 
     function selectedValues(name) {
       return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(input => input.value);
+    }
+
+    function setDefaultAutoInputs() {
+      document.querySelector('#teamMemberCount').value = '1';
+      document.querySelector('#registrationFee').value = '0';
+    }
+
+    function updateAutoFields() {
+      const teamMemberCount = normalizeTeamMemberCount(valueOf('teamMemberCount'));
+      const registrationFee = normalizeRegistrationFee(valueOf('registrationFee'));
+      const activityFormat = valueOf('activityFormat');
+      const locationInput = document.querySelector('#location');
+      const featureTags = buildFeatureTags(selectedValues('featureTags'), teamMemberCount, registrationFee, activityFormat);
+
+      locationInput.required = activityFormat === 'ออนไซต์' || activityFormat === 'ผสม';
+
+      document.querySelectorAll('[data-auto-feature="true"]').forEach(input => {
+        input.checked = featureTags.includes(input.value);
+      });
+    }
+
+    function buildFeatureTags(values, teamMemberCount, registrationFee, activityFormat) {
+      const tags = values.filter(value => !AUTO_FEATURE_TAGS.includes(value));
+
+      tags.push(teamMemberCount === 1 ? 'แข่งขันเดี่ยว' : 'แข่งขันทีม');
+      tags.push(registrationFee > 0 ? 'มีค่าสมัคร' : 'ฟรี');
+
+      if (activityFormat === 'ออนไลน์' || activityFormat === 'ผสม') {
+        tags.push('ออนไลน์');
+      }
+
+      if (activityFormat === 'ออนไซต์' || activityFormat === 'ผสม') {
+        tags.push('ต้องเดินทาง');
+      }
+
+      return Array.from(new Set(tags));
+    }
+
+    function normalizeTeamMemberCount(value) {
+      const number = parseInt(String(value || '').replace(/,/g, ''), 10);
+      return Number.isFinite(number) && number >= 1 ? number : 1;
+    }
+
+    function normalizeRegistrationFee(value) {
+      const number = Number(String(value || '').replace(/,/g, ''));
+      return Number.isFinite(number) && number >= 0 ? number : 0;
     }
 
     function setStatus(message, type) {

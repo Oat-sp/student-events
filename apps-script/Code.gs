@@ -3,6 +3,7 @@ var SPREADSHEET_NAME = 'student-events-data';
 var SPREADSHEET_ID = '1Ij0EfvD8AW8gz3tffG1Yz7fPJMHa2vnh5MgnFau_bss';
 var EVENTS_CACHE_KEY = 'events_json';
 var EVENTS_CACHE_SECONDS = 600;
+var EVENTS_SCHEMA_VERSION = '20260611-auto-tags';
 
 var HEADERS = [
   'timestamp',
@@ -17,6 +18,10 @@ var HEADERS = [
   'm4',
   'm5',
   'm6',
+  'teamMemberCount',
+  'registrationFee',
+  'activityFormat',
+  'location',
   'interestTags',
   'featureTags',
   'portfolioTags',
@@ -27,8 +32,6 @@ var HEADERS = [
   'submissionDate',
   'eventStartDate',
   'eventEndDate',
-  'location',
-  'teamMemberCount',
   'summary',
   'sourceLink',
   'documentLinks',
@@ -40,6 +43,9 @@ var LEVEL_KEYS = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6'];
 var TAG_KEYS = ['interestTags', 'featureTags', 'portfolioTags'];
 var DATE_KEYS = ['registerOpenDate', 'registerCloseDate', 'submissionDate', 'eventStartDate', 'eventEndDate'];
 var TIME_KEYS = ['registerOpenTime', 'registerCloseTime'];
+var AUTO_FEATURE_TAGS = ['แข่งขันเดี่ยว', 'แข่งขันทีม', 'ฟรี', 'มีค่าสมัคร', 'ออนไลน์', 'ต้องเดินทาง'];
+var REMOVED_INTEREST_TAGS = ['ทำงานเป็นทีม'];
+var ACTIVITY_FORMATS = ['ออนไลน์', 'ออนไซต์', 'ผสม'];
 
 function doGet(e) {
   // ใช้ endpoint เดียวกันทั้งฟอร์มครูและ JSON สำหรับ GitHub Pages
@@ -55,13 +61,15 @@ function doGet(e) {
 
 function saveEvent(form) {
   var sheet = ensureEventsSheet_();
-  var data = form || {};
+  var data = normalizeEventInput_(form || {});
 
   // เรียงค่าตาม HEADERS เสมอ เพื่อให้หัวตารางใน Google Sheet ไม่สลับตำแหน่ง
   var row = HEADERS.map(function(header) {
     if (header === 'timestamp') return new Date();
     if (LEVEL_KEYS.indexOf(header) !== -1) return parseBoolean_(data[header]);
     if (TAG_KEYS.indexOf(header) !== -1) return joinTags_(data[header]);
+    if (header === 'teamMemberCount') return data.teamMemberCount;
+    if (header === 'registrationFee') return data.registrationFee;
     if (header === 'eventStartDate') return cleanText_(data.eventStartDate || data.eventDate);
     if (header === 'isPublished') return data.isPublished === undefined ? true : parseBoolean_(data.isPublished);
     return cleanText_(data[header]);
@@ -97,6 +105,7 @@ function buildEventsPayload_() {
   if (values.length <= 1) {
     return {
       ok: true,
+      schemaVersion: EVENTS_SCHEMA_VERSION,
       generatedAt: new Date().toISOString(),
       events: []
     };
@@ -114,6 +123,7 @@ function buildEventsPayload_() {
 
   return {
     ok: true,
+    schemaVersion: EVENTS_SCHEMA_VERSION,
     generatedAt: new Date().toISOString(),
     events: events
   };
@@ -121,7 +131,17 @@ function buildEventsPayload_() {
 
 function getCachedEventsJson_() {
   try {
-    return CacheService.getScriptCache().get(EVENTS_CACHE_KEY);
+    var cachedJson = CacheService.getScriptCache().get(EVENTS_CACHE_KEY);
+    if (!cachedJson) return null;
+
+    // ป้องกันการเสิร์ฟ cache เก่าหลังอัปเดต schema ของข้อมูล
+    var cachedPayload = JSON.parse(cachedJson);
+    if (cachedPayload && cachedPayload.schemaVersion === EVENTS_SCHEMA_VERSION) {
+      return cachedJson;
+    }
+
+    CacheService.getScriptCache().remove(EVENTS_CACHE_KEY);
+    return null;
   } catch (error) {
     return null;
   }
@@ -280,6 +300,18 @@ function rowToEvent_(row, headerMap) {
     event[header] = cleanText_(value);
   });
 
+  var rawRegistrationFee = event.registrationFee;
+  var rawActivityFormat = event.activityFormat;
+
+  event.teamMemberCount = normalizeTeamMemberCount_(event.teamMemberCount);
+  event.registrationFee = normalizeRegistrationFee_(event.registrationFee);
+  event.activityFormat = normalizeActivityFormat_(event.activityFormat);
+  event.interestTags = filterRemovedInterestTags_(event.interestTags);
+  event.featureTags = buildFeatureTags_(event.featureTags, event, {
+    hasRegistrationFee: cleanText_(rawRegistrationFee) !== '',
+    hasActivityFormat: cleanText_(rawActivityFormat) !== ''
+  });
+
   // Alias สำหรับหน้าเว็บเวอร์ชันเก่าที่อาจยังอ่าน eventDate อยู่
   event.eventDate = event.eventStartDate;
 
@@ -303,25 +335,110 @@ function cleanText_(value) {
   return String(value).trim();
 }
 
-function joinTags_(value) {
-  if (Array.isArray(value)) {
-    return value.map(cleanText_).filter(Boolean).join(', ');
-  }
+function normalizeEventInput_(data) {
+  var normalized = {};
 
-  return cleanText_(value);
+  Object.keys(data || {}).forEach(function(key) {
+    normalized[key] = data[key];
+  });
+
+  normalized.teamMemberCount = normalizeTeamMemberCount_(normalized.teamMemberCount);
+  normalized.registrationFee = normalizeRegistrationFee_(normalized.registrationFee);
+  normalized.activityFormat = normalizeActivityFormat_(normalized.activityFormat);
+  normalized.interestTags = filterRemovedInterestTags_(normalizeTags_(normalized.interestTags));
+  normalized.portfolioTags = normalizeTags_(normalized.portfolioTags);
+  normalized.featureTags = buildFeatureTags_(normalized.featureTags, normalized);
+
+  return normalized;
+}
+
+function joinTags_(value) {
+  return normalizeTags_(value).join(', ');
 }
 
 function splitTags_(value) {
-  if (Array.isArray(value)) {
-    return value.map(cleanText_).filter(Boolean);
+  return normalizeTags_(value);
+}
+
+function normalizeTags_(value) {
+  var tags = Array.isArray(value)
+    ? value
+    : cleanText_(value).split(',');
+
+  return dedupeTags_(tags.map(cleanText_).filter(Boolean));
+}
+
+function dedupeTags_(tags) {
+  var seen = {};
+  return tags.filter(function(tag) {
+    if (seen[tag]) return false;
+    seen[tag] = true;
+    return true;
+  });
+}
+
+function filterRemovedInterestTags_(tags) {
+  return normalizeTags_(tags).filter(function(tag) {
+    return REMOVED_INTEREST_TAGS.indexOf(tag) === -1;
+  });
+}
+
+function buildFeatureTags_(value, data, options) {
+  options = options || {};
+  var originalTags = normalizeTags_(value);
+  var tags = originalTags.filter(function(tag) {
+    return AUTO_FEATURE_TAGS.indexOf(tag) === -1;
+  });
+  var teamMemberCount = normalizeTeamMemberCount_(data.teamMemberCount);
+  var registrationFee = normalizeRegistrationFee_(data.registrationFee);
+  var activityFormat = normalizeActivityFormat_(data.activityFormat);
+
+  tags.push(teamMemberCount === 1 ? 'แข่งขันเดี่ยว' : 'แข่งขันทีม');
+
+  if (options.hasRegistrationFee === false) {
+    preserveTags_(tags, originalTags, ['ฟรี', 'มีค่าสมัคร']);
+  } else {
+    tags.push(registrationFee > 0 ? 'มีค่าสมัคร' : 'ฟรี');
   }
 
-  return cleanText_(value)
-    .split(',')
-    .map(function(tag) {
-      return tag.trim();
-    })
-    .filter(Boolean);
+  if (options.hasActivityFormat === false) {
+    preserveTags_(tags, originalTags, ['ออนไลน์', 'ต้องเดินทาง']);
+  } else {
+    if (activityFormat === 'ออนไลน์' || activityFormat === 'ผสม') {
+      tags.push('ออนไลน์');
+    }
+
+    if (activityFormat === 'ออนไซต์' || activityFormat === 'ผสม') {
+      tags.push('ต้องเดินทาง');
+    }
+  }
+
+  return dedupeTags_(tags);
+}
+
+function preserveTags_(targetTags, sourceTags, tagsToPreserve) {
+  tagsToPreserve.forEach(function(tag) {
+    if (sourceTags.indexOf(tag) !== -1) {
+      targetTags.push(tag);
+    }
+  });
+}
+
+function normalizeTeamMemberCount_(value) {
+  var number = parseInt(cleanText_(value).replace(/,/g, ''), 10);
+  if (!number || number < 1) return 1;
+  return number;
+}
+
+function normalizeRegistrationFee_(value) {
+  var number = Number(cleanText_(value).replace(/,/g, ''));
+  if (!isFinite(number) || number < 0) return 0;
+  return number;
+}
+
+function normalizeActivityFormat_(value) {
+  var text = cleanText_(value);
+  return ACTIVITY_FORMATS.indexOf(text) !== -1 ? text : '';
 }
 
 function parseBoolean_(value) {

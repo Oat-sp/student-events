@@ -25,7 +25,7 @@ README.md
 หัวตารางที่ระบบใช้คือ:
 
 ```text
-timestamp, title, posterImage, type, category, organizer, m1, m2, m3, m4, m5, m6, interestTags, featureTags, portfolioTags, registerOpenDate, registerOpenTime, registerCloseDate, registerCloseTime, submissionDate, eventStartDate, eventEndDate, location, teamMemberCount, summary, sourceLink, documentLinks, contactTeacher, isPublished
+timestamp, title, posterImage, type, category, organizer, m1, m2, m3, m4, m5, m6, teamMemberCount, registrationFee, activityFormat, location, interestTags, featureTags, portfolioTags, registerOpenDate, registerOpenTime, registerCloseDate, registerCloseTime, submissionDate, eventStartDate, eventEndDate, summary, sourceLink, documentLinks, contactTeacher, isPublished
 ```
 
 ถ้าเคยใช้หัวตารางรุ่นเก่าที่มี `eventDate` ระบบจะย้ายค่าเดิมไปที่ `eventStartDate` ให้อัตโนมัติเมื่อ Apps Script ถูกเรียกใช้งานครั้งถัดไป
@@ -111,19 +111,21 @@ const DATA_URL = 'https://script.google.com/macros/s/DEPLOYMENT_ID/exec?action=e
 
 1. เปิด URL ของ Apps Script Web App
 2. กรอกข้อมูลกิจกรรม
-3. เลือกระดับชั้นและแท็กที่เกี่ยวข้อง
-4. ใส่วันเปิด/ปิดรับสมัคร พร้อมเวลาได้ถ้าประกาศระบุไว้
-5. ใส่วันเริ่มและวันจบแข่งขัน/กิจกรรม ถ้ามีหลายวัน
-6. ใส่จำนวนสมาชิกในทีมถ้าต้องการแสดงบนหน้าเว็บ ถ้าเว้นว่าง ระบบจะไม่แสดงช่องนี้
-7. ใส่ลิงก์รูปประชาสัมพันธ์จากต้นทาง
-8. ใส่ลิงก์เอกสารแบบหลายบรรทัด เช่น:
+3. เลือกรูปแบบกิจกรรม ถ้าเลือก `ออนไซต์` หรือ `ผสม` ต้องกรอกสถานที่
+4. เลือกระดับชั้นและแท็กที่เกี่ยวข้อง
+5. ใส่จำนวนสมาชิกในทีม ค่าเริ่มต้นคือ `1`
+6. ใส่ค่าสมัคร ค่าเริ่มต้นคือ `0`
+7. ใส่วันเปิด/ปิดรับสมัคร พร้อมเวลาได้ถ้าประกาศระบุไว้
+8. ใส่วันเริ่มและวันจบแข่งขัน/กิจกรรม ถ้ามีหลายวัน
+9. ใส่ลิงก์รูปประชาสัมพันธ์จากต้นทาง
+10. ใส่ลิงก์เอกสารแบบหลายบรรทัด เช่น:
 
 ```text
 ระเบียบการแข่งขัน: https://example.com/rules.pdf
 ใบสมัคร: https://example.com/form
 ```
 
-9. กดบันทึกข้อมูล
+11. กดบันทึกข้อมูล
 
 ### นักเรียน
 
@@ -136,5 +138,6 @@ const DATA_URL = 'https://script.google.com/macros/s/DEPLOYMENT_ID/exec?action=e
 
 - ระบบไม่เก็บไฟล์รูปภาพหรือเอกสารไว้เอง ใช้เป็นลิงก์จากต้นทางเท่านั้น
 - ถ้าไม่ต้องการเผยแพร่รายการใด ให้เอาเครื่องหมายถูกออกจาก `เผยแพร่ให้นักเรียนเห็น` ในฟอร์ม หรือแก้ค่า `isPublished` ในชีตเป็น `FALSE`
+- ระบบจะติดแท็กคุณสมบัติอัตโนมัติจากจำนวนสมาชิก ค่าสมัคร และรูปแบบกิจกรรม เช่น `แข่งขันเดี่ยว`, `แข่งขันทีม`, `ฟรี`, `มีค่าสมัคร`, `ออนไลน์`, `ต้องเดินทาง`
 - หน้าเว็บจะคำนวณสถานะรับสมัครจากวันที่/เวลาเปิดรับสมัคร วันที่/เวลาปิดรับสมัคร และวันกิจกรรมโดยอัตโนมัติ
 - แท็บ `สรุปประชาสัมพันธ์` มีข้อความพร้อมคัดลอกสำหรับส่งต่อใน LINE หรือช่องทางประชาสัมพันธ์ของโรงเรียน
