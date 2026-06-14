@@ -3,104 +3,150 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>กิจกรรมนักเรียน</title>
+  <title>สนามแข่งขันนักเรียน</title>
   <link rel="stylesheet" href="style.css">
-  <script src="script.js?v=20260611-format-label" defer></script>
+  <script src="script.js?v=20260614-dashboard" defer></script>
 </head>
 <body>
-  <header class="site-header">
-    <div class="header-inner">
-      <div>
-        <p class="eyebrow">ศูนย์รวมข่าวประชาสัมพันธ์</p>
-        <h1>กิจกรรมนักเรียน</h1>
-        <p class="lead">ติดตามกิจกรรม การแข่งขัน ค่าย ทุน และโอกาสพัฒนา Portfolio ที่เหมาะกับนักเรียนมัธยม</p>
+  <div class="app-shell" id="appShell">
+    <aside class="sidebar" aria-label="เมนูหลัก">
+      <div class="brand">
+        <span class="brand-icon" aria-hidden="true">🏆</span>
+        <span class="brand-text">สนามแข่งขัน<br>นักเรียน</span>
       </div>
-      <div class="header-card" aria-label="สถานะข้อมูล">
-        <span class="metric" id="totalCount">0</span>
-        <span class="metric-label">รายการเผยแพร่</span>
+
+      <button class="sidebar-collapse" id="sidebarToggle" type="button" aria-label="ย่อหรือขยายแถบเมนู">☰</button>
+
+      <nav class="side-nav">
+        <button class="side-item is-active" type="button" data-tab="home">
+          <span aria-hidden="true">⌂</span><span>หน้าแรก</span>
+        </button>
+        <button class="side-item" type="button" data-tab="all">
+          <span aria-hidden="true">▦</span><span>ทั้งหมด</span>
+        </button>
+        <button class="side-item" type="button" data-tab="deadline">
+          <span aria-hidden="true">◷</span><span>ใกล้หมดเขต</span>
+        </button>
+        <button class="side-item" type="button" data-tab="calendar">
+          <span aria-hidden="true">⌗</span><span>ปฏิทิน</span>
+        </button>
+        <button class="side-item" type="button" data-tab="summary">
+          <span aria-hidden="true">☷</span><span>สรุปรายเดือน</span>
+        </button>
+
+        <div class="side-divider" role="presentation"></div>
+
+        <button class="side-item" type="button" data-side-filter="feature" data-value="มีเกียรติบัตร">
+          <span aria-hidden="true">♕</span><span>มีเกียรติบัตร</span>
+        </button>
+        <button class="side-item" type="button" data-side-filter="feature" data-value="ฟรี">
+          <span aria-hidden="true">♡</span><span>ฟรี</span>
+        </button>
+        <button class="side-item" type="button" data-side-filter="feature" data-value="ออนไลน์">
+          <span aria-hidden="true">◎</span><span>ออนไลน์</span>
+        </button>
+        <button class="side-item" type="button" data-side-filter="type" data-value="จิตอาสา">
+          <span aria-hidden="true">◇</span><span>จิตอาสา</span>
+        </button>
+        <button class="side-item" type="button" data-side-filter="type" data-value="งานแนะแนว">
+          <span aria-hidden="true">✧</span><span>งานแนะแนว</span>
+        </button>
+        <button class="side-item" type="button" data-side-filter="type" data-value="กิจกรรมอื่น ๆ">
+          <span aria-hidden="true">✦</span><span>กิจกรรมอื่น ๆ</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-note">
+        <strong>สนใจเข้าร่วม?</strong>
+        <span>อ่านรายละเอียดแล้วติดต่อครูผู้ประสานงานของกิจกรรมนั้น</span>
       </div>
+    </aside>
+
+    <div class="app-main">
+      <header class="topbar">
+        <button class="mobile-menu" id="mobileSidebarToggle" type="button" aria-label="เปิดหรือปิดเมนู">☰</button>
+        <div class="search-shell">
+          <label class="sr-only" for="searchInput">ค้นหา</label>
+          <span aria-hidden="true">⌕</span>
+          <input id="searchInput" type="search" placeholder="ค้นหาการแข่งขัน ค่าย โครงงาน วิทย์ ภาษาอังกฤษ...">
+        </div>
+        <div class="top-actions">
+          <span class="count-badge"><strong id="totalCount">0</strong><span>รายการ</span></span>
+          <button class="icon-button" type="button" aria-label="แจ้งเตือน">⌾</button>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <section class="status-panel" id="loadingPanel" hidden>
+          <p>กำลังโหลดข้อมูลกิจกรรม...</p>
+        </section>
+
+        <section class="status-panel error-panel" id="errorPanel" hidden>
+          <h2>ยังโหลดข้อมูลไม่ได้</h2>
+          <p id="errorMessage">กรุณาตรวจสอบ DATA_URL ในไฟล์ docs/script.js</p>
+        </section>
+
+        <section class="filter-panel" id="filterPanel" aria-label="ตัวกรองกิจกรรม" hidden>
+          <div class="filters">
+            <div>
+              <label for="typeFilter">ประเภท</label>
+              <select id="typeFilter"></select>
+            </div>
+            <div>
+              <label for="categoryFilter">หมวดหมู่</label>
+              <select id="categoryFilter"></select>
+            </div>
+            <div>
+              <label for="levelFilter">ระดับชั้น</label>
+              <select id="levelFilter"></select>
+            </div>
+            <div>
+              <label for="interestFilter">แท็กความสนใจ</label>
+              <select id="interestFilter"></select>
+            </div>
+            <div>
+              <label for="featureFilter">แท็กคุณสมบัติ</label>
+              <select id="featureFilter"></select>
+            </div>
+            <div>
+              <label for="portfolioFilter">Portfolio</label>
+              <select id="portfolioFilter"></select>
+            </div>
+            <div>
+              <label for="sortSelect">เรียงตาม</label>
+              <select id="sortSelect">
+                <option value="registerOpenDate">วันเปิดสมัคร</option>
+                <option value="registerCloseDate">วันปิดสมัคร</option>
+                <option value="submissionDate">วันส่งผลงาน</option>
+                <option value="eventStartDate">วันเริ่มแข่งขัน/กิจกรรม</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="toolbar-actions">
+            <button class="secondary-button" id="resetFiltersButton" type="button">ล้างตัวกรอง</button>
+            <p class="result-note" id="resultNote" aria-live="polite"></p>
+          </div>
+        </section>
+
+        <section class="content-view" id="homeView" aria-label="หน้าแรก"></section>
+        <section class="content-view" id="allView" aria-label="รายการกิจกรรมทั้งหมด" hidden></section>
+        <section class="content-view" id="deadlineView" aria-label="รายการใกล้หมดเขต" hidden></section>
+        <section class="content-view" id="calendarView" aria-label="ปฏิทินกิจกรรม" hidden></section>
+        <section class="content-view" id="detailView" aria-label="รายละเอียดกิจกรรม" hidden></section>
+        <section class="content-view" id="summaryView" aria-label="สรุปประชาสัมพันธ์" hidden>
+          <div class="summary-controls">
+            <div class="segmented" role="group" aria-label="ช่วงเวลาสรุป">
+              <button class="segment is-active" type="button" data-summary-mode="week">รายสัปดาห์</button>
+              <button class="segment" type="button" data-summary-mode="month">รายเดือน</button>
+            </div>
+            <button class="primary-button" id="copySummaryButton" type="button">คัดลอกข้อความประชาสัมพันธ์</button>
+          </div>
+          <div id="summaryContent"></div>
+        </section>
+      </main>
     </div>
-  </header>
-
-  <main class="page-shell">
-    <section class="toolbar" aria-label="ค้นหาและกรองข้อมูล">
-      <div class="search-box">
-        <label for="searchInput">ค้นหา</label>
-        <input id="searchInput" type="search" placeholder="ค้นหาชื่อกิจกรรม ผู้จัด หรือรายละเอียด">
-      </div>
-
-      <div class="filters">
-        <div>
-          <label for="typeFilter">ประเภท</label>
-          <select id="typeFilter"></select>
-        </div>
-        <div>
-          <label for="categoryFilter">หมวดหมู่</label>
-          <select id="categoryFilter"></select>
-        </div>
-        <div>
-          <label for="levelFilter">ระดับชั้น</label>
-          <select id="levelFilter"></select>
-        </div>
-        <div>
-          <label for="interestFilter">แท็กความสนใจ</label>
-          <select id="interestFilter"></select>
-        </div>
-        <div>
-          <label for="featureFilter">แท็กคุณสมบัติ</label>
-          <select id="featureFilter"></select>
-        </div>
-        <div>
-          <label for="portfolioFilter">Portfolio</label>
-          <select id="portfolioFilter"></select>
-        </div>
-        <div>
-          <label for="sortSelect">เรียงตาม</label>
-          <select id="sortSelect">
-            <option value="registerOpenDate">วันเปิดสมัคร</option>
-            <option value="registerCloseDate">วันปิดสมัคร</option>
-            <option value="submissionDate">วันส่งผลงาน</option>
-            <option value="eventStartDate">วันเริ่มแข่งขัน/กิจกรรม</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="toolbar-actions">
-        <button class="secondary-button" id="resetFiltersButton" type="button">ล้างตัวกรอง</button>
-        <p class="result-note" id="resultNote" aria-live="polite"></p>
-      </div>
-    </section>
-
-    <nav class="tabs" aria-label="มุมมองข้อมูล">
-      <button class="tab is-active" type="button" data-tab="all">รายการทั้งหมด</button>
-      <button class="tab" type="button" data-tab="deadline">ใกล้หมดเขต</button>
-      <button class="tab" type="button" data-tab="calendar">ปฏิทิน</button>
-      <button class="tab" type="button" data-tab="summary">สรุปประชาสัมพันธ์</button>
-    </nav>
-
-    <section class="status-panel" id="loadingPanel" hidden>
-      <p>กำลังโหลดข้อมูลกิจกรรม...</p>
-    </section>
-
-    <section class="status-panel error-panel" id="errorPanel" hidden>
-      <h2>ยังโหลดข้อมูลไม่ได้</h2>
-      <p id="errorMessage">กรุณาตรวจสอบ DATA_URL ในไฟล์ docs/script.js</p>
-    </section>
-
-    <section class="content-view" id="allView" aria-label="รายการกิจกรรมทั้งหมด"></section>
-    <section class="content-view" id="deadlineView" aria-label="รายการใกล้หมดเขต" hidden></section>
-    <section class="content-view" id="calendarView" aria-label="ปฏิทินกิจกรรม" hidden></section>
-    <section class="content-view" id="summaryView" aria-label="สรุปประชาสัมพันธ์" hidden>
-      <div class="summary-controls">
-        <div class="segmented" role="group" aria-label="ช่วงเวลาสรุป">
-          <button class="segment is-active" type="button" data-summary-mode="week">รายสัปดาห์</button>
-          <button class="segment" type="button" data-summary-mode="month">รายเดือน</button>
-        </div>
-        <button class="primary-button" id="copySummaryButton" type="button">คัดลอกข้อความประชาสัมพันธ์</button>
-      </div>
-      <div id="summaryContent"></div>
-    </section>
-  </main>
+  </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 </body>
