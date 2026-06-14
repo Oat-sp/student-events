@@ -1,26 +1,28 @@
 :root {
   color-scheme: light;
-  --bg: #f6f8fb;
+  --bg: #faf9f6;
   --surface: #ffffff;
-  --surface-soft: #f8fafc;
-  --ink: #172033;
-  --muted: #69758a;
-  --line: #e3e8f2;
-  --brand: #5b5ce2;
-  --brand-dark: #393aa4;
-  --brand-soft: #eef0ff;
-  --green: #16a36f;
-  --green-soft: #e8f8f1;
-  --orange: #f97316;
-  --orange-soft: #fff2e8;
-  --rose: #e5484d;
-  --rose-soft: #ffecef;
-  --blue: #2f80ed;
-  --blue-soft: #eaf3ff;
-  --purple: #6d5dfc;
-  --purple-soft: #f0eeff;
-  --amber: #d97706;
-  --shadow: 0 16px 38px rgba(25, 35, 70, 0.08);
+  --surface-soft: #fbfaf7;
+  --ink: #231f20;
+  --muted: #6f6a63;
+  --line: #eadfce;
+  --brand: #a63d3d;
+  --brand-dark: #7f2b2b;
+  --brand-soft: #fff1ee;
+  --school-yellow: #d9aa32;
+  --school-yellow-soft: #fff7df;
+  --green: #2f8d63;
+  --green-soft: #eaf7ef;
+  --orange: #c88d1b;
+  --orange-soft: #fff5df;
+  --rose: #c74747;
+  --rose-soft: #fff0ee;
+  --blue: #3c6f8f;
+  --blue-soft: #edf5f8;
+  --purple: #c5962c;
+  --purple-soft: #fff7df;
+  --amber: #a56f0f;
+  --shadow: 0 16px 38px rgba(82, 41, 26, 0.08);
 }
 
 * {
@@ -121,11 +123,12 @@ p {
   height: 38px;
   border-radius: 8px;
   background: var(--orange-soft);
+  color: var(--brand-dark);
   font-size: 1.35rem;
 }
 
 .brand-text {
-  color: #172554;
+  color: var(--brand-dark);
 }
 
 .sidebar-collapse,
@@ -136,7 +139,7 @@ p {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fff;
-  color: #1f2a44;
+  color: var(--brand-dark);
   font-weight: 900;
 }
 
@@ -183,7 +186,7 @@ p {
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #334155;
+  color: #3f3833;
   padding: 9px 10px;
   text-align: left;
   font-weight: 800;
@@ -240,7 +243,7 @@ p {
   align-items: center;
   gap: 8px;
   min-height: 44px;
-  border: 1px solid #d8deea;
+  border: 1px solid #e4d8c5;
   border-radius: 8px;
   background: #fff;
   padding: 0 12px;
@@ -295,7 +298,7 @@ p {
 label {
   display: block;
   margin-bottom: 6px;
-  color: #334155;
+  color: #3f3833;
   font-size: 0.86rem;
   font-weight: 900;
 }
@@ -304,7 +307,7 @@ select,
 .filter-panel input {
   width: 100%;
   min-height: 40px;
-  border: 1px solid #cfd7e6;
+  border: 1px solid #ded0ba;
   border-radius: 8px;
   background: #fff;
   color: var(--ink);
@@ -313,7 +316,7 @@ select,
 
 select:focus,
 .filter-panel input:focus {
-  outline: 3px solid rgba(91, 92, 226, 0.16);
+  outline: 3px solid rgba(166, 61, 61, 0.15);
   border-color: var(--brand);
 }
 
@@ -346,9 +349,9 @@ select:focus,
   grid-template-columns: minmax(0, 1.15fr) minmax(240px, 0.85fr);
   gap: 24px;
   align-items: center;
-  border: 1px solid #e4e7ff;
+  border: 1px solid #f0dcc6;
   border-radius: 8px;
-  background: #f3f2ff;
+  background: linear-gradient(135deg, #fff8e5 0%, #fff1ee 100%);
   padding: 34px 38px;
   overflow: hidden;
 }
@@ -356,14 +359,14 @@ select:focus,
 .hero-copy h1 {
   max-width: 620px;
   margin: 0;
-  color: #172554;
+  color: var(--brand-dark);
   font-size: clamp(1.8rem, 4vw, 3.1rem);
   line-height: 1.18;
 }
 
 .hero-copy p {
   margin: 12px 0 0;
-  color: #46546f;
+  color: #6f5b48;
   font-weight: 700;
 }
 
@@ -378,10 +381,10 @@ select:focus,
 .hero-clock,
 .hero-person {
   position: absolute;
-  border: 1px solid rgba(91, 92, 226, 0.18);
+  border: 1px solid rgba(166, 61, 61, 0.16);
   border-radius: 8px;
   background: #fff;
-  box-shadow: 0 12px 26px rgba(91, 92, 226, 0.14);
+  box-shadow: 0 12px 26px rgba(166, 61, 61, 0.12);
 }
 
 .hero-calendar {
@@ -396,7 +399,7 @@ select:focus,
   display: block;
   height: 18%;
   border-radius: 8px 8px 0 0;
-  background: #ff8aa0;
+  background: #d9aa32;
 }
 
 .hero-clock {
@@ -432,7 +435,7 @@ select:focus,
   top: 8%;
   width: 34%;
   height: 70%;
-  background: #dbe8ff;
+  background: #f5ded8;
 }
 
 .quick-grid {
@@ -451,9 +454,9 @@ select:focus,
   place-items: center;
   gap: 6px;
   padding: 12px 8px;
-  color: #243049;
+  color: #3a312b;
   font-weight: 900;
-  box-shadow: 0 10px 24px rgba(25, 35, 70, 0.06);
+  box-shadow: 0 10px 24px rgba(82, 41, 26, 0.06);
 }
 
 .quick-card:hover {
@@ -495,7 +498,7 @@ select:focus,
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
-  box-shadow: 0 10px 24px rgba(25, 35, 70, 0.06);
+  box-shadow: 0 10px 24px rgba(82, 41, 26, 0.06);
   padding: 13px;
 }
 
@@ -504,7 +507,7 @@ select:focus,
 }
 
 .event-card[data-open-event]:hover {
-  border-color: #c6c8ff;
+  border-color: #e2b7a6;
   transform: translateY(-1px);
 }
 
@@ -549,7 +552,7 @@ select:focus,
 
 .mini-meta strong {
   display: block;
-  color: #243049;
+  color: #3a312b;
 }
 
 .pill,
@@ -581,8 +584,8 @@ select:focus,
 }
 
 .status-pill {
-  background: #eef2f7;
-  color: #334155;
+  background: #f4eee7;
+  color: #5c5148;
 }
 
 .status-open {
@@ -596,13 +599,13 @@ select:focus,
 }
 
 .status-upcoming {
-  background: var(--blue-soft);
-  color: #1d5fbf;
+  background: var(--school-yellow-soft);
+  color: #7a4f08;
 }
 
 .status-closed {
-  background: #f1f5f9;
-  color: #475569;
+  background: #f4eee7;
+  color: #6f5b48;
 }
 
 .status-done {
@@ -619,7 +622,7 @@ select:focus,
 .chip {
   border: 1px solid var(--line);
   background: var(--surface-soft);
-  color: #42526b;
+  color: #5d5048;
 }
 
 .card-actions {
@@ -657,8 +660,8 @@ select:focus,
 
 .copy-button {
   background: var(--orange-soft);
-  border-color: #fed7aa;
-  color: #9a4a05;
+  border-color: #f1d28d;
+  color: #7a4f08;
 }
 
 .link-button:hover,
@@ -816,7 +819,7 @@ select:focus,
 }
 
 .calendar-weekdays {
-  color: #475569;
+  color: #6f5b48;
   font-size: 0.82rem;
   font-weight: 900;
   text-align: center;
@@ -824,7 +827,7 @@ select:focus,
 }
 
 .weekday.is-sunday {
-  color: #e11d48;
+  color: var(--brand);
 }
 
 .calendar-day-button {
@@ -833,7 +836,7 @@ select:focus,
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #1e293b;
+  color: var(--ink);
   font-weight: 900;
 }
 
@@ -900,7 +903,7 @@ select:focus,
   align-items: center;
   gap: 8px;
   min-height: 28px;
-  color: #334155;
+  color: #3f3833;
   font-size: 0.88rem;
   font-weight: 800;
 }
@@ -947,7 +950,7 @@ select:focus,
 
 .calendar-label.marker-end {
   background: var(--blue-soft);
-  color: #1d5fbf;
+  color: #315c74;
 }
 
 .summary-controls {
@@ -972,7 +975,7 @@ select:focus,
 .summary-text {
   white-space: pre-wrap;
   margin: 0;
-  color: #334155;
+  color: #3f3833;
   font-weight: 650;
 }
 
@@ -982,7 +985,7 @@ select:focus,
   bottom: 16px;
   width: min(340px, calc(100% - 32px));
   border-radius: 8px;
-  background: #172033;
+  background: var(--ink);
   color: #fff;
   padding: 12px 14px;
   box-shadow: var(--shadow);
