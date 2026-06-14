@@ -1,5 +1,6 @@
 // ใส่ URL ของ Google Apps Script Web App ที่ลงท้ายด้วย ?action=events
 const DATA_URL = 'https://script.google.com/macros/s/AKfycbwUt_kyuMqXbPnEWx2CLNDGl2RHaCt-jXVeLkVeps-q6-2OXbNa2M0Npxz4yykn8Q6o/exec?action=events';
+const MORE_EVENTS_URL = 'https://www.camphub.in.th/medical-health/doctor/';
 
 const TYPES = ['การแข่งขัน', 'จิตอาสา', 'งานแนะแนว', 'ค่าย/อบรม', 'ทุนการศึกษา', 'กิจกรรมอื่น ๆ'];
 const CATEGORIES = ['วิทยาศาสตร์', 'คณิตศาสตร์', 'เทคโนโลยี', 'ภาษาไทย', 'ภาษาอังกฤษ', 'สังคมศึกษา', 'ศิลปะ', 'กีฬา', 'สิ่งแวดล้อม', 'แนะแนวการศึกษา', 'จิตอาสา', 'ทั่วไป'];
@@ -413,22 +414,14 @@ function render() {
 }
 
 function renderHomeView(events) {
-  const featuredEvents = events
+  const featuredEvents = sortByDeadlineProximity(events
     .filter(event => event.status.code === 'closing' || event.status.code === 'open')
-    .slice(0, 4);
-  const fallbackEvents = featuredEvents.length ? featuredEvents : events.slice(0, 4);
+  ).slice(0, 4);
+  const fallbackEvents = featuredEvents.length ? featuredEvents : sortByDeadlineProximity(events).slice(0, 4);
 
   elements.homeView.innerHTML = `
     <section class="hero-panel">
-      <div class="hero-copy">
-        <h1>ค้นหาโอกาส พัฒนาตัวเอง กับการแข่งขันและกิจกรรมดี ๆ</h1>
-        <p>สำหรับนักเรียนมัธยมศึกษา เลือกจากกำหนดการ แท็กความสนใจ และ Portfolio ที่เหมาะกับตัวเอง</p>
-      </div>
-      <div class="hero-art" aria-hidden="true">
-        <div class="hero-calendar"></div>
-        <div class="hero-clock"></div>
-        <div class="hero-person"></div>
-      </div>
+      <img class="hero-banner-image" src="assets/home-banner.png" width="1916" height="821" alt="ค้นหาโอกาส พัฒนาตัวเอง กับการแข่งขันและกิจกรรมดี ๆ สำหรับนักเรียนมัธยมศึกษา">
     </section>
 
     <section class="quick-grid" aria-label="ทางลัดประเภทกิจกรรม">
@@ -437,6 +430,7 @@ function renderHomeView(events) {
       ${renderQuickCard('จิตอาสา', 'heart-fill', 'type', 'จิตอาสา')}
       ${renderQuickCard('งานแนะแนว', 'mortarboard-fill', 'type', 'งานแนะแนว')}
       ${renderQuickCard('กิจกรรมอื่น ๆ', 'flag-fill', 'type', 'กิจกรรมอื่น ๆ')}
+      ${renderExternalQuickCard('ค้นหากิจกรรมเพิ่มเติม', 'search', MORE_EVENTS_URL)}
     </section>
 
     <section>
@@ -455,6 +449,15 @@ function renderQuickCard(label, iconName, filter, value) {
       <span class="quick-icon">${renderIcon(iconName)}</span>
       <span>${escapeHTML(label)}</span>
     </button>
+  `;
+}
+
+function renderExternalQuickCard(label, iconName, url) {
+  return `
+    <a class="quick-card quick-card-link" href="${escapeAttr(url)}" target="_blank" rel="noopener">
+      <span class="quick-icon">${renderIcon(iconName)}</span>
+      <span>${escapeHTML(label)}</span>
+    </a>
   `;
 }
 
@@ -526,7 +529,7 @@ function getFilteredEvents() {
 
 function getEventsForActiveTab(events) {
   if (state.activeTab === 'deadline') {
-    return events.filter(event => event.status.code === 'closing');
+    return sortByDeadlineProximity(events.filter(event => event.status.code === 'closing' || event.status.code === 'open'));
   }
 
   return events;
@@ -550,6 +553,29 @@ function compareByDate(a, b, field) {
   if (!dateB) return -1;
 
   return dateA.getTime() - dateB.getTime();
+}
+
+function sortByDeadlineProximity(events) {
+  return [...events].sort((a, b) => compareByDeadlineProximity(a, b));
+}
+
+function compareByDeadlineProximity(a, b) {
+  const timeA = getDeadlineSortTime(a);
+  const timeB = getDeadlineSortTime(b);
+
+  if (timeA === null && timeB === null) return a.title.localeCompare(b.title, 'th');
+  if (timeA === null) return 1;
+  if (timeB === null) return -1;
+
+  return timeA - timeB || a.title.localeCompare(b.title, 'th');
+}
+
+function getDeadlineSortTime(event) {
+  const closeAt = parseLocalDateTime(event.registerCloseDate, event.registerCloseTime, 'end');
+  if (closeAt) return closeAt.getTime();
+
+  const eventDate = parseLocalDate(event.eventStartDate || event.eventDate) || parseLocalDate(event.eventEndDate);
+  return eventDate ? eventDate.getTime() : null;
 }
 
 function renderCardGrid(events, emptyText) {
