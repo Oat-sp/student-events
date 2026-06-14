@@ -4,55 +4,56 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>สนามแข่งขันนักเรียน</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="style.css">
-  <script src="script.js?v=20260614-dashboard" defer></script>
+  <script src="script.js?v=20260614-bi-icons" defer></script>
 </head>
 <body>
   <div class="app-shell" id="appShell">
     <aside class="sidebar" aria-label="เมนูหลัก">
       <div class="brand">
-        <span class="brand-icon" aria-hidden="true">🏆</span>
+        <span class="brand-icon"><i class="bi bi-trophy-fill" aria-hidden="true"></i></span>
         <span class="brand-text">สนามแข่งขัน<br>นักเรียน</span>
       </div>
 
-      <button class="sidebar-collapse" id="sidebarToggle" type="button" aria-label="ย่อหรือขยายแถบเมนู">☰</button>
+      <button class="sidebar-collapse icon-only" id="sidebarToggle" type="button" aria-label="ย่อหรือขยายแถบเมนู"><i class="bi bi-list" aria-hidden="true"></i></button>
 
       <nav class="side-nav">
         <button class="side-item is-active" type="button" data-tab="home">
-          <span aria-hidden="true">⌂</span><span>หน้าแรก</span>
+          <i class="bi bi-house-door-fill" aria-hidden="true"></i><span>หน้าแรก</span>
         </button>
         <button class="side-item" type="button" data-tab="all">
-          <span aria-hidden="true">▦</span><span>ทั้งหมด</span>
+          <i class="bi bi-grid-fill" aria-hidden="true"></i><span>ทั้งหมด</span>
         </button>
         <button class="side-item" type="button" data-tab="deadline">
-          <span aria-hidden="true">◷</span><span>ใกล้หมดเขต</span>
+          <i class="bi bi-clock-history" aria-hidden="true"></i><span>ใกล้หมดเขต</span>
         </button>
         <button class="side-item" type="button" data-tab="calendar">
-          <span aria-hidden="true">⌗</span><span>ปฏิทิน</span>
+          <i class="bi bi-calendar-event" aria-hidden="true"></i><span>ปฏิทิน</span>
         </button>
         <button class="side-item" type="button" data-tab="summary">
-          <span aria-hidden="true">☷</span><span>สรุปรายเดือน</span>
+          <i class="bi bi-card-text" aria-hidden="true"></i><span>สรุปรายเดือน</span>
         </button>
 
         <div class="side-divider" role="presentation"></div>
 
         <button class="side-item" type="button" data-side-filter="feature" data-value="มีเกียรติบัตร">
-          <span aria-hidden="true">♕</span><span>มีเกียรติบัตร</span>
+          <i class="bi bi-award" aria-hidden="true"></i><span>มีเกียรติบัตร</span>
         </button>
         <button class="side-item" type="button" data-side-filter="feature" data-value="ฟรี">
-          <span aria-hidden="true">♡</span><span>ฟรี</span>
+          <i class="bi bi-patch-check" aria-hidden="true"></i><span>ฟรี</span>
         </button>
         <button class="side-item" type="button" data-side-filter="feature" data-value="ออนไลน์">
-          <span aria-hidden="true">◎</span><span>ออนไลน์</span>
+          <i class="bi bi-globe2" aria-hidden="true"></i><span>ออนไลน์</span>
         </button>
         <button class="side-item" type="button" data-side-filter="type" data-value="จิตอาสา">
-          <span aria-hidden="true">◇</span><span>จิตอาสา</span>
+          <i class="bi bi-heart" aria-hidden="true"></i><span>จิตอาสา</span>
         </button>
         <button class="side-item" type="button" data-side-filter="type" data-value="งานแนะแนว">
-          <span aria-hidden="true">✧</span><span>งานแนะแนว</span>
+          <i class="bi bi-mortarboard" aria-hidden="true"></i><span>งานแนะแนว</span>
         </button>
         <button class="side-item" type="button" data-side-filter="type" data-value="กิจกรรมอื่น ๆ">
-          <span aria-hidden="true">✦</span><span>กิจกรรมอื่น ๆ</span>
+          <i class="bi bi-flag" aria-hidden="true"></i><span>กิจกรรมอื่น ๆ</span>
         </button>
       </nav>
 
@@ -64,15 +65,15 @@
 
     <div class="app-main">
       <header class="topbar">
-        <button class="mobile-menu" id="mobileSidebarToggle" type="button" aria-label="เปิดหรือปิดเมนู">☰</button>
+        <button class="mobile-menu icon-only" id="mobileSidebarToggle" type="button" aria-label="เปิดหรือปิดเมนู"><i class="bi bi-list" aria-hidden="true"></i></button>
         <div class="search-shell">
           <label class="sr-only" for="searchInput">ค้นหา</label>
-          <span aria-hidden="true">⌕</span>
+          <i class="bi bi-search" aria-hidden="true"></i>
           <input id="searchInput" type="search" placeholder="ค้นหาการแข่งขัน ค่าย โครงงาน วิทย์ ภาษาอังกฤษ...">
         </div>
         <div class="top-actions">
           <span class="count-badge"><strong id="totalCount">0</strong><span>รายการ</span></span>
-          <button class="icon-button" type="button" aria-label="แจ้งเตือน">⌾</button>
+          <button class="icon-button icon-only" type="button" aria-label="แจ้งเตือน"><i class="bi bi-bell" aria-hidden="true"></i></button>
         </div>
       </header>
 
@@ -87,6 +88,7 @@
         </section>
 
         <section class="filter-panel" id="filterPanel" aria-label="ตัวกรองกิจกรรม" hidden>
+          <div class="filter-title"><i class="bi bi-funnel" aria-hidden="true"></i>กรองข้อมูล</div>
           <div class="filters">
             <div>
               <label for="typeFilter">ประเภท</label>
@@ -124,7 +126,7 @@
           </div>
 
           <div class="toolbar-actions">
-            <button class="secondary-button" id="resetFiltersButton" type="button">ล้างตัวกรอง</button>
+            <button class="secondary-button" id="resetFiltersButton" type="button"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>ล้างตัวกรอง</button>
             <p class="result-note" id="resultNote" aria-live="polite"></p>
           </div>
         </section>
@@ -140,7 +142,7 @@
               <button class="segment is-active" type="button" data-summary-mode="week">รายสัปดาห์</button>
               <button class="segment" type="button" data-summary-mode="month">รายเดือน</button>
             </div>
-            <button class="primary-button" id="copySummaryButton" type="button">คัดลอกข้อความประชาสัมพันธ์</button>
+            <button class="primary-button" id="copySummaryButton" type="button"><i class="bi bi-clipboard" aria-hidden="true"></i>คัดลอกข้อความประชาสัมพันธ์</button>
           </div>
           <div id="summaryContent"></div>
         </section>

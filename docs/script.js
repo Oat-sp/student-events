@@ -432,30 +432,34 @@ function renderHomeView(events) {
     </section>
 
     <section class="quick-grid" aria-label="ทางลัดประเภทกิจกรรม">
-      ${renderQuickCard('ทั้งหมด', '▦', 'all', '')}
-      ${renderQuickCard('การแข่งขัน', '🏆', 'type', 'การแข่งขัน')}
-      ${renderQuickCard('จิตอาสา', '♥', 'type', 'จิตอาสา')}
-      ${renderQuickCard('งานแนะแนว', '✦', 'type', 'งานแนะแนว')}
-      ${renderQuickCard('กิจกรรมอื่น ๆ', '⚑', 'type', 'กิจกรรมอื่น ๆ')}
+      ${renderQuickCard('ทั้งหมด', 'grid-fill', 'all', '')}
+      ${renderQuickCard('การแข่งขัน', 'trophy-fill', 'type', 'การแข่งขัน')}
+      ${renderQuickCard('จิตอาสา', 'heart-fill', 'type', 'จิตอาสา')}
+      ${renderQuickCard('งานแนะแนว', 'mortarboard-fill', 'type', 'งานแนะแนว')}
+      ${renderQuickCard('กิจกรรมอื่น ๆ', 'flag-fill', 'type', 'กิจกรรมอื่น ๆ')}
     </section>
 
     <section>
       <div class="section-heading">
         <h2>ใกล้หมดเขตสมัคร</h2>
-        <button class="section-link" type="button" data-quick-filter="deadline">ดูทั้งหมด ›</button>
+        <button class="section-link" type="button" data-quick-filter="deadline">ดูทั้งหมด ${renderIcon('arrow-right-short')}</button>
       </div>
       ${renderCardGrid(fallbackEvents, 'ยังไม่มีกิจกรรมที่ตรงกับเงื่อนไข')}
     </section>
   `;
 }
 
-function renderQuickCard(label, icon, filter, value) {
+function renderQuickCard(label, iconName, filter, value) {
   return `
     <button class="quick-card" type="button" data-quick-filter="${escapeAttr(filter)}" data-value="${escapeAttr(value)}">
-      <span class="quick-icon" aria-hidden="true">${escapeHTML(icon)}</span>
+      <span class="quick-icon">${renderIcon(iconName)}</span>
       <span>${escapeHTML(label)}</span>
     </button>
   `;
+}
+
+function renderIcon(iconName) {
+  return `<i class="bi bi-${escapeAttr(iconName)}" aria-hidden="true"></i>`;
 }
 
 function renderListView(title, events, emptyText) {
@@ -561,19 +565,19 @@ function renderEventCard(event) {
     <article class="event-card" data-open-event="${escapeAttr(event.id)}" tabindex="0" role="button" aria-label="เปิดรายละเอียด ${escapeAttr(event.title || 'กิจกรรม')}">
       <div class="card-topline">
         <span class="pill ${event.status.code === 'open' ? 'green' : event.status.code === 'closing' ? 'orange' : ''}">${escapeHTML(event.status.label)}</span>
-        <span aria-hidden="true">☆</span>
+        ${renderIcon('star')}
       </div>
       <h3 class="card-title">${escapeHTML(event.title || 'ไม่ระบุชื่อกิจกรรม')}</h3>
       <p class="card-subtitle">${escapeHTML(event.organizer || 'ไม่ระบุผู้จัด')}</p>
       <div class="mini-meta">
-        <div><strong>เปิดรับสมัคร</strong>${formatDateTime(event.registerOpenDate, event.registerOpenTime) || '-'}</div>
-        <div><strong>ปิดรับสมัคร</strong>${formatDateTime(event.registerCloseDate, event.registerCloseTime) || '-'}</div>
-        <div><strong>วันกิจกรรม</strong>${formatEventDateRange(event)}</div>
-        <div><strong>ระดับ</strong>${escapeHTML(event.autoLevelTags.join(', '))}</div>
+        <div><strong>${renderIcon('calendar-event')}เปิดรับสมัคร</strong>${formatDateTime(event.registerOpenDate, event.registerOpenTime) || '-'}</div>
+        <div><strong>${renderIcon('calendar-x')}ปิดรับสมัคร</strong>${formatDateTime(event.registerCloseDate, event.registerCloseTime) || '-'}</div>
+        <div><strong>${renderIcon('trophy')}วันกิจกรรม</strong>${formatEventDateRange(event)}</div>
+        <div><strong>${renderIcon('people')}ระดับ</strong>${escapeHTML(event.autoLevelTags.join(', '))}</div>
       </div>
       ${renderTags(event)}
       <div class="card-actions">
-        <button class="copy-button" type="button" data-copy-event="${escapeAttr(event.id)}">คัดลอก</button>
+        <button class="copy-button" type="button" data-copy-event="${escapeAttr(event.id)}">${renderIcon('clipboard')}คัดลอก</button>
       </div>
     </article>
   `;
@@ -587,10 +591,10 @@ function renderDetailView() {
   }
 
   const documentButtons = parseDocumentLinks(event.documentLinks)
-    .map(link => `<a class="link-button" href="${escapeAttr(link.url)}" target="_blank" rel="noopener">เอกสาร: ${escapeHTML(link.label)}</a>`)
+    .map(link => `<a class="link-button" href="${escapeAttr(link.url)}" target="_blank" rel="noopener">${renderIcon('file-earmark-text')}เอกสาร: ${escapeHTML(link.label)}</a>`)
     .join('');
   const sourceButton = event.sourceLink
-    ? `<a class="primary-button" href="${escapeAttr(event.sourceLink)}" target="_blank" rel="noopener">เปิดประกาศต้นทาง</a>`
+    ? `<a class="primary-button" href="${escapeAttr(event.sourceLink)}" target="_blank" rel="noopener">${renderIcon('info-circle')}เปิดประกาศต้นทาง</a>`
     : '';
   const relatedEvents = getRelatedEvents(event, 4);
 
@@ -598,7 +602,7 @@ function renderDetailView() {
     <article class="detail-shell">
       <div class="detail-hero">
         <div class="detail-title">
-          <button class="secondary-button" type="button" data-quick-filter="${escapeAttr(state.filters.query ? 'all' : 'home')}">← กลับ</button>
+          <button class="secondary-button" type="button" data-quick-filter="${escapeAttr(state.filters.query ? 'all' : 'home')}">${renderIcon('arrow-left')}กลับ</button>
           <div class="chip-row">
             <span class="pill">${escapeHTML(event.type || 'ไม่ระบุประเภท')}</span>
             <span class="status-pill ${event.status.className}">${escapeHTML(event.status.label)}</span>
@@ -618,15 +622,15 @@ function renderDetailView() {
       <div class="detail-section">
         <h2>รายละเอียดสำคัญ</h2>
         <div class="detail-meta">
-          ${renderMetaTile('ผู้จัด', event.organizer || '-')}
-          ${renderMetaTile('รับสมัคร', formatRegistrationRange(event))}
-          ${renderMetaTile('ส่งผลงาน', event.submissionDate ? formatThaiDate(event.submissionDate) : '-')}
-          ${renderMetaTile('วันกิจกรรม', formatEventDateRange(event))}
-          ${renderMetaTile('รูปแบบกิจกรรม', event.activityFormat || '-')}
-          ${renderMetaTile('สถานที่', event.location || '-')}
-          ${renderMetaTile('จำนวนสมาชิกทีม', shouldShowTeamMemberCount(event) ? formatTeamMemberCount(event.teamMemberCount) : 'แข่งขันเดี่ยว')}
-          ${renderMetaTile('ค่าสมัคร', shouldShowRegistrationFee(event) ? formatRegistrationFee(event.registrationFee) : 'ฟรีหรือไม่ระบุ')}
-          ${renderMetaTile('ครูผู้ประสานงาน', event.contactTeacher || '-')}
+          ${renderMetaTile('ผู้จัด', event.organizer || '-', 'building')}
+          ${renderMetaTile('รับสมัคร', formatRegistrationRange(event), 'calendar-event')}
+          ${renderMetaTile('ส่งผลงาน', event.submissionDate ? formatThaiDate(event.submissionDate) : '-', 'upload')}
+          ${renderMetaTile('วันกิจกรรม', formatEventDateRange(event), 'trophy')}
+          ${renderMetaTile('รูปแบบกิจกรรม', event.activityFormat || '-', 'tags')}
+          ${renderMetaTile('สถานที่', event.location || '-', 'geo-alt')}
+          ${renderMetaTile('จำนวนสมาชิกทีม', shouldShowTeamMemberCount(event) ? formatTeamMemberCount(event.teamMemberCount) : 'แข่งขันเดี่ยว', 'people')}
+          ${renderMetaTile('ค่าสมัคร', shouldShowRegistrationFee(event) ? formatRegistrationFee(event.registrationFee) : 'ฟรีหรือไม่ระบุ', 'patch-check')}
+          ${renderMetaTile('ครูผู้ประสานงาน', event.contactTeacher || '-', 'person-badge')}
         </div>
       </div>
 
@@ -635,7 +639,7 @@ function renderDetailView() {
         <div class="card-actions">
           ${sourceButton}
           ${documentButtons || '<span class="chip">ยังไม่มีเอกสารแนบ</span>'}
-          <button class="copy-button" type="button" data-copy-event="${escapeAttr(event.id)}">คัดลอกข้อความประชาสัมพันธ์</button>
+          <button class="copy-button" type="button" data-copy-event="${escapeAttr(event.id)}">${renderIcon('clipboard')}คัดลอกข้อความประชาสัมพันธ์</button>
         </div>
       </div>
 
@@ -649,8 +653,8 @@ function renderDetailView() {
   `;
 }
 
-function renderMetaTile(label, value) {
-  return `<div class="meta-tile"><span>${escapeHTML(label)}</span><strong>${escapeHTML(value)}</strong></div>`;
+function renderMetaTile(label, value, iconName) {
+  return `<div class="meta-tile"><span>${renderIcon(iconName)}${escapeHTML(label)}</span><strong>${escapeHTML(value)}</strong></div>`;
 }
 
 function openEventDetail(eventId) {
@@ -710,14 +714,14 @@ function renderCalendarView(events) {
   elements.calendarView.innerHTML = `
     <div class="calendar-shell">
       <div class="calendar-top">
-        <button class="calendar-back" type="button" data-quick-filter="home" aria-label="กลับหน้าแรก">‹</button>
+        <button class="calendar-back icon-only" type="button" data-quick-filter="home" aria-label="กลับหน้าแรก">${renderIcon('arrow-left')}</button>
         <div class="calendar-title">
           <h1>ปฏิทินการแข่งขัน</h1>
           <p>${formatThaiMonthYear(cursor)}</p>
         </div>
         <div class="calendar-nav">
-          <button type="button" data-calendar-nav="prev" aria-label="เดือนก่อนหน้า">‹</button>
-          <button type="button" data-calendar-nav="next" aria-label="เดือนถัดไป">›</button>
+          <button class="icon-only" type="button" data-calendar-nav="prev" aria-label="เดือนก่อนหน้า">${renderIcon('chevron-left')}</button>
+          <button class="icon-only" type="button" data-calendar-nav="next" aria-label="เดือนถัดไป">${renderIcon('chevron-right')}</button>
         </div>
       </div>
 
@@ -798,11 +802,19 @@ function renderLegendRow(kind, label) {
 function renderCalendarEntry(entry) {
   return `
     <div class="calendar-event-row" data-open-event="${escapeAttr(entry.event.id)}" tabindex="0" role="button">
-      <span class="calendar-label marker-${entry.kind}">${escapeHTML(entry.label)}</span>
+      <span class="calendar-label marker-${entry.kind}">${renderIcon(getCalendarEntryIcon(entry.kind))}${escapeHTML(entry.label)}</span>
       <strong>${escapeHTML(entry.event.title || 'ไม่ระบุชื่อกิจกรรม')}</strong>
       <span>${escapeHTML(entry.event.type || 'กิจกรรม')} · ${escapeHTML(entry.event.autoLevelTags.join(', '))}</span>
     </div>
   `;
+}
+
+function getCalendarEntryIcon(kind) {
+  if (kind === 'open') return 'calendar-event';
+  if (kind === 'close') return 'calendar-x';
+  if (kind === 'submit') return 'upload';
+  if (kind === 'event') return 'trophy';
+  return 'calendar-check';
 }
 
 function moveCalendar(direction) {

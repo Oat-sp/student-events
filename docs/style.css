@@ -49,6 +49,23 @@ a {
   color: inherit;
 }
 
+.bi {
+  color: currentColor;
+  line-height: 1;
+  margin-right: 0.35rem;
+  vertical-align: -0.08em;
+}
+
+.icon-only .bi,
+.brand-icon .bi,
+.quick-icon .bi,
+.card-topline > .bi,
+.side-item > .bi,
+.search-shell > .bi,
+.day-markers .bi {
+  margin-right: 0;
+}
+
 h1,
 h2,
 h3,
@@ -267,6 +284,14 @@ p {
   gap: 12px;
 }
 
+.filter-title {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  color: var(--brand-dark);
+  font-weight: 900;
+}
+
 label {
   display: block;
   margin-bottom: 6px;
@@ -439,6 +464,7 @@ select:focus,
 .quick-icon {
   font-size: 1.65rem;
   line-height: 1;
+  color: var(--brand);
 }
 
 .section-heading {
@@ -515,6 +541,10 @@ select:focus,
   gap: 8px;
   margin: 12px 0;
   font-size: 0.82rem;
+}
+
+.mini-meta .bi {
+  color: var(--brand);
 }
 
 .mini-meta strong {
