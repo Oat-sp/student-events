@@ -3,7 +3,7 @@ var SPREADSHEET_NAME = 'student-events-data';
 var SPREADSHEET_ID = '1Ij0EfvD8AW8gz3tffG1Yz7fPJMHa2vnh5MgnFau_bss';
 var EVENTS_CACHE_KEY = 'events_json';
 var EVENTS_CACHE_SECONDS = 600;
-var EVENTS_SCHEMA_VERSION = '20260611-format-label';
+var EVENTS_SCHEMA_VERSION = '20260615-primary-team-range';
 
 var HEADERS = [
   'timestamp',
@@ -12,6 +12,12 @@ var HEADERS = [
   'type',
   'category',
   'organizer',
+  'p1',
+  'p2',
+  'p3',
+  'p4',
+  'p5',
+  'p6',
   'm1',
   'm2',
   'm3',
@@ -39,7 +45,7 @@ var HEADERS = [
   'isPublished'
 ];
 
-var LEVEL_KEYS = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6'];
+var LEVEL_KEYS = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'm1', 'm2', 'm3', 'm4', 'm5', 'm6'];
 var TAG_KEYS = ['interestTags', 'featureTags', 'portfolioTags'];
 var DATE_KEYS = ['registerOpenDate', 'registerCloseDate', 'submissionDate', 'eventStartDate', 'eventEndDate'];
 var TIME_KEYS = ['registerOpenTime', 'registerCloseTime'];
@@ -395,7 +401,7 @@ function buildFeatureTags_(value, data, options) {
   var registrationFee = normalizeRegistrationFee_(data.registrationFee);
   var activityFormat = normalizeActivityFormat_(data.activityFormat);
 
-  tags.push(teamMemberCount === 1 ? 'แข่งขันเดี่ยว' : 'แข่งขันทีม');
+  tags.push(isSoloTeamMemberCount_(teamMemberCount) ? 'แข่งขันเดี่ยว' : 'แข่งขันทีม');
 
   if (options.hasRegistrationFee === false) {
     preserveTags_(tags, originalTags, ['ฟรี', 'มีค่าสมัคร']);
@@ -427,9 +433,27 @@ function preserveTags_(targetTags, sourceTags, tagsToPreserve) {
 }
 
 function normalizeTeamMemberCount_(value) {
-  var number = parseInt(cleanText_(value).replace(/,/g, ''), 10);
-  if (!number || number < 1) return 1;
-  return number;
+  var text = cleanText_(value).replace(/,/g, '');
+  if (!text) return '1';
+
+  var rangeMatch = text.match(/^(\d+)\s*[-–—]\s*(\d+)$/);
+  if (rangeMatch) {
+    var first = parseInt(rangeMatch[1], 10);
+    var second = parseInt(rangeMatch[2], 10);
+    if (!first || !second || first < 1 || second < 1) return '1';
+
+    var min = Math.min(first, second);
+    var max = Math.max(first, second);
+    return min === max ? String(min) : min + ' - ' + max;
+  }
+
+  var number = parseInt(text, 10);
+  if (!number || number < 1) return '1';
+  return String(number);
+}
+
+function isSoloTeamMemberCount_(value) {
+  return normalizeTeamMemberCount_(value) === '1';
 }
 
 function normalizeRegistrationFee_(value) {

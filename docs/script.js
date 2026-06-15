@@ -10,8 +10,14 @@ const PORTFOLIO_TAGS = ['วิชาการ', 'วิทยาศาสตร
 const AUTO_FEATURE_TAGS = ['แข่งขันเดี่ยว', 'แข่งขันทีม', 'ฟรี', 'มีค่าสมัคร', 'ออนไลน์', 'ต้องเดินทาง'];
 const MIXED_ACTIVITY_FORMAT = 'ออนไลน์+ออนไซต์';
 const LEGACY_MIXED_ACTIVITY_FORMAT = 'ผสม';
-const LEVEL_KEYS = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6'];
+const LEVEL_KEYS = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'm1', 'm2', 'm3', 'm4', 'm5', 'm6'];
 const LEVEL_LABELS = {
+  p1: 'ป.1',
+  p2: 'ป.2',
+  p3: 'ป.3',
+  p4: 'ป.4',
+  p5: 'ป.5',
+  p6: 'ป.6',
   m1: 'ม.1',
   m2: 'ม.2',
   m3: 'ม.3',
@@ -20,7 +26,7 @@ const LEVEL_LABELS = {
   m6: 'ม.6'
 };
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const EVENTS_STORAGE_KEY = 'student_events_data_cache_v4';
+const EVENTS_STORAGE_KEY = 'student_events_data_cache_v5';
 const FETCH_TIMEOUT_MS = 8000;
 
 const state = {
@@ -88,12 +94,19 @@ function populateFilters() {
   fillSelect(elements.typeFilter, TYPES, 'ทุกประเภท');
   fillSelect(elements.categoryFilter, CATEGORIES, 'ทุกหมวดหมู่');
   fillSelect(elements.levelFilter, [
+    { value: 'p1', label: 'ป.1' },
+    { value: 'p2', label: 'ป.2' },
+    { value: 'p3', label: 'ป.3' },
+    { value: 'p4', label: 'ป.4' },
+    { value: 'p5', label: 'ป.5' },
+    { value: 'p6', label: 'ป.6' },
     { value: 'm1', label: 'ม.1' },
     { value: 'm2', label: 'ม.2' },
     { value: 'm3', label: 'ม.3' },
     { value: 'm4', label: 'ม.4' },
     { value: 'm5', label: 'ม.5' },
     { value: 'm6', label: 'ม.6' },
+    { value: 'primary', label: 'ประถม' },
     { value: 'lower', label: 'ม.ต้น' },
     { value: 'upper', label: 'ม.ปลาย' },
     { value: 'all', label: 'ทุกระดับ' }
@@ -323,6 +336,12 @@ function normalizeEvent(rawEvent) {
     type: stringValue(rawEvent.type),
     category: stringValue(rawEvent.category),
     organizer: stringValue(rawEvent.organizer),
+    p1: toBoolean(rawEvent.p1),
+    p2: toBoolean(rawEvent.p2),
+    p3: toBoolean(rawEvent.p3),
+    p4: toBoolean(rawEvent.p4),
+    p5: toBoolean(rawEvent.p5),
+    p6: toBoolean(rawEvent.p6),
     m1: toBoolean(rawEvent.m1),
     m2: toBoolean(rawEvent.m2),
     m3: toBoolean(rawEvent.m3),
@@ -438,7 +457,7 @@ function renderHomeView(events) {
         <h2>ใกล้หมดเขตสมัคร</h2>
         <button class="section-link" type="button" data-quick-filter="deadline">ดูทั้งหมด ${renderIcon('arrow-right-short')}</button>
       </div>
-      ${renderCardGrid(fallbackEvents, 'ยังไม่มีกิจกรรมที่ตรงกับเงื่อนไข')}
+      ${renderCardGrid(fallbackEvents, 'ยังไม่มีกิจกรรมที่ตรงกับเงื่อนไข', { variant: 'home' })}
     </section>
   `;
 }
@@ -538,6 +557,7 @@ function getEventsForActiveTab(events) {
 function matchesLevel(event, level) {
   if (!level) return true;
   if (LEVEL_KEYS.includes(level)) return event[level] === true;
+  if (level === 'primary') return event.p1 || event.p2 || event.p3 || event.p4 || event.p5 || event.p6;
   if (level === 'lower') return event.m1 || event.m2 || event.m3;
   if (level === 'upper') return event.m4 || event.m5 || event.m6;
   if (level === 'all') return LEVEL_KEYS.every(key => event[key]);
@@ -578,34 +598,50 @@ function getDeadlineSortTime(event) {
   return eventDate ? eventDate.getTime() : null;
 }
 
-function renderCardGrid(events, emptyText) {
+function renderCardGrid(events, emptyText, options = {}) {
   if (!events.length) {
     return `<div class="empty-state"><p>${escapeHTML(emptyText)}</p></div>`;
   }
 
-  return `<div class="card-grid">${events.map(renderEventCard).join('')}</div>`;
+  const gridClass = options.variant === 'home' ? 'card-grid home-card-grid' : 'card-grid';
+  return `<div class="${gridClass}">${events.map(event => renderEventCard(event, options)).join('')}</div>`;
 }
 
-function renderEventCard(event) {
+function renderEventCard(event, options = {}) {
+  const isHomeCard = options.variant === 'home';
+  const className = isHomeCard ? 'event-card home-event-card' : 'event-card';
+
   return `
-    <article class="event-card" data-open-event="${escapeAttr(event.id)}" tabindex="0" role="button" aria-label="เปิดรายละเอียด ${escapeAttr(event.title || 'กิจกรรม')}">
-      <div class="card-topline">
-        <span class="pill ${event.status.code === 'open' ? 'green' : event.status.code === 'closing' ? 'orange' : ''}">${escapeHTML(event.status.label)}</span>
-        ${renderIcon('star')}
-      </div>
-      <h3 class="card-title">${escapeHTML(event.title || 'ไม่ระบุชื่อกิจกรรม')}</h3>
-      <p class="card-subtitle">${escapeHTML(event.organizer || 'ไม่ระบุผู้จัด')}</p>
-      <div class="mini-meta">
-        <div><strong>${renderIcon('calendar-event')}เปิดรับสมัคร</strong>${formatDateTime(event.registerOpenDate, event.registerOpenTime) || '-'}</div>
-        <div><strong>${renderIcon('calendar-x')}ปิดรับสมัคร</strong>${formatDateTime(event.registerCloseDate, event.registerCloseTime) || '-'}</div>
-        <div><strong>${renderIcon('trophy')}วันกิจกรรม</strong>${formatEventDateRange(event)}</div>
-        <div><strong>${renderIcon('people')}ระดับ</strong>${escapeHTML(event.autoLevelTags.join(', '))}</div>
-      </div>
-      ${renderTags(event)}
-      <div class="card-actions">
-        <button class="copy-button" type="button" data-copy-event="${escapeAttr(event.id)}">${renderIcon('clipboard')}คัดลอก</button>
+    <article class="${className}" data-open-event="${escapeAttr(event.id)}" tabindex="0" role="button" aria-label="เปิดรายละเอียด ${escapeAttr(event.title || 'กิจกรรม')}">
+      ${isHomeCard ? renderCardBackground(event) : ''}
+      <div class="card-content">
+        <div class="card-topline">
+          <span class="pill ${event.status.code === 'open' ? 'green' : event.status.code === 'closing' ? 'orange' : ''}">${escapeHTML(event.status.label)}</span>
+          ${renderIcon('star')}
+        </div>
+        <h3 class="card-title">${escapeHTML(event.title || 'ไม่ระบุชื่อกิจกรรม')}</h3>
+        <p class="card-subtitle">${escapeHTML(event.organizer || 'ไม่ระบุผู้จัด')}</p>
+        <div class="mini-meta">
+          <div><strong>${renderIcon('calendar-event')}เปิดรับสมัคร</strong>${formatDateTime(event.registerOpenDate, event.registerOpenTime) || '-'}</div>
+          <div><strong>${renderIcon('calendar-x')}ปิดรับสมัคร</strong>${formatDateTime(event.registerCloseDate, event.registerCloseTime) || '-'}</div>
+          <div><strong>${renderIcon('trophy')}วันกิจกรรม</strong>${formatEventDateRange(event)}</div>
+          <div><strong>${renderIcon('people')}ระดับ</strong>${escapeHTML(event.autoLevelTags.join(', '))}</div>
+        </div>
+        ${renderTags(event)}
+        <div class="card-actions">
+          <button class="copy-button" type="button" data-copy-event="${escapeAttr(event.id)}">${renderIcon('clipboard')}คัดลอก</button>
+        </div>
       </div>
     </article>
+  `;
+}
+
+function renderCardBackground(event) {
+  return `
+    <div class="card-bg" aria-hidden="true">
+      <span class="card-bg-fallback"></span>
+      ${event.posterImage ? `<img src="${escapeAttr(event.posterImage)}" alt="" loading="lazy" onerror="this.remove();">` : ''}
+    </div>
   `;
 }
 
@@ -627,6 +663,11 @@ function renderDetailView() {
   elements.detailView.innerHTML = `
     <article class="detail-shell">
       <div class="detail-hero">
+        <div class="poster-frame">
+          ${event.posterImage
+            ? `<img src="${escapeAttr(event.posterImage)}" alt="โปสเตอร์ ${escapeAttr(event.title)}" loading="lazy" onerror="this.remove(); this.parentElement.innerHTML='<div class=&quot;poster-placeholder&quot;>ไม่มีรูปประชาสัมพันธ์</div>';">`
+            : '<div class="poster-placeholder">ไม่มีรูปประชาสัมพันธ์</div>'}
+        </div>
         <div class="detail-title">
           <button class="secondary-button" type="button" data-quick-filter="${escapeAttr(state.filters.query ? 'all' : 'home')}">${renderIcon('arrow-left')}กลับ</button>
           <div class="chip-row">
@@ -637,11 +678,6 @@ function renderDetailView() {
           <h1>${escapeHTML(event.title || 'ไม่ระบุชื่อกิจกรรม')}</h1>
           ${event.summary ? `<p class="summary">${escapeHTML(event.summary)}</p>` : ''}
           ${renderTags(event)}
-        </div>
-        <div class="poster-frame">
-          ${event.posterImage
-            ? `<img src="${escapeAttr(event.posterImage)}" alt="โปสเตอร์ ${escapeAttr(event.title)}" loading="lazy" onerror="this.remove(); this.parentElement.innerHTML='<div class=&quot;poster-placeholder&quot;>ไม่มีรูปประชาสัมพันธ์</div>';">`
-            : '<div class="poster-placeholder">ไม่มีรูปประชาสัมพันธ์</div>'}
         </div>
       </div>
 
@@ -937,6 +973,7 @@ function getAutoLevelTags(event) {
   if (allLevels) return ['ทุกระดับ'];
 
   const tags = [];
+  if (event.p1 || event.p2 || event.p3 || event.p4 || event.p5 || event.p6) tags.push('ประถม');
   if (event.m1 || event.m2 || event.m3) tags.push('ม.ต้น');
   if (event.m4 || event.m5 || event.m6) tags.push('ม.ปลาย');
 
@@ -1112,7 +1149,7 @@ function formatTime(value) {
 }
 
 function shouldShowTeamMemberCount(event) {
-  return normalizeTeamMemberCount(event.teamMemberCount) !== 1;
+  return !isSoloTeamMemberCount(event.teamMemberCount);
 }
 
 function formatTeamMemberCount(value) {
@@ -1228,7 +1265,7 @@ function buildFeatureTags(values, teamMemberCount, registrationFee, activityForm
   const originalTags = toArray(values);
   const tags = originalTags.filter(tag => !AUTO_FEATURE_TAGS.includes(tag));
 
-  tags.push(normalizeTeamMemberCount(teamMemberCount) === 1 ? 'แข่งขันเดี่ยว' : 'แข่งขันทีม');
+  tags.push(isSoloTeamMemberCount(teamMemberCount) ? 'แข่งขันเดี่ยว' : 'แข่งขันทีม');
 
   if (options.hasRegistrationFee === false) {
     preserveTags(tags, originalTags, ['ฟรี', 'มีค่าสมัคร']);
@@ -1268,8 +1305,26 @@ function preserveTags(targetTags, sourceTags, tagsToPreserve) {
 }
 
 function normalizeTeamMemberCount(value) {
-  const number = parseInt(stringValue(value).replace(/,/g, ''), 10);
-  return Number.isFinite(number) && number >= 1 ? number : 1;
+  const text = stringValue(value).replace(/,/g, '');
+  if (!text) return '1';
+
+  const rangeMatch = text.match(/^(\d+)\s*[-–—]\s*(\d+)$/);
+  if (rangeMatch) {
+    const first = parseInt(rangeMatch[1], 10);
+    const second = parseInt(rangeMatch[2], 10);
+    if (!first || !second || first < 1 || second < 1) return '1';
+
+    const min = Math.min(first, second);
+    const max = Math.max(first, second);
+    return min === max ? String(min) : `${min} - ${max}`;
+  }
+
+  const number = parseInt(text, 10);
+  return Number.isFinite(number) && number >= 1 ? String(number) : '1';
+}
+
+function isSoloTeamMemberCount(value) {
+  return normalizeTeamMemberCount(value) === '1';
 }
 
 function normalizeRegistrationFee(value) {

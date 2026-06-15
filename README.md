@@ -9,6 +9,7 @@ apps-script/
   Code.gs
   Index.html
 docs/
+  assets/
   index.html
   style.css
   script.js
@@ -25,10 +26,10 @@ README.md
 หัวตารางที่ระบบใช้คือ:
 
 ```text
-timestamp, title, posterImage, type, category, organizer, m1, m2, m3, m4, m5, m6, teamMemberCount, registrationFee, activityFormat, location, interestTags, featureTags, portfolioTags, registerOpenDate, registerOpenTime, registerCloseDate, registerCloseTime, submissionDate, eventStartDate, eventEndDate, summary, sourceLink, documentLinks, contactTeacher, isPublished
+timestamp, title, posterImage, type, category, organizer, p1, p2, p3, p4, p5, p6, m1, m2, m3, m4, m5, m6, teamMemberCount, registrationFee, activityFormat, location, interestTags, featureTags, portfolioTags, registerOpenDate, registerOpenTime, registerCloseDate, registerCloseTime, submissionDate, eventStartDate, eventEndDate, summary, sourceLink, documentLinks, contactTeacher, isPublished
 ```
 
-ถ้าเคยใช้หัวตารางรุ่นเก่าที่มี `eventDate` ระบบจะย้ายค่าเดิมไปที่ `eventStartDate` ให้อัตโนมัติเมื่อ Apps Script ถูกเรียกใช้งานครั้งถัดไป
+ถ้าเคยใช้หัวตารางรุ่นเก่าที่ไม่มี `p1`-`p6` หรือมี `eventDate` ระบบจะเพิ่มคอลัมน์ใหม่และย้ายค่าเดิมไปที่ `eventStartDate` ให้อัตโนมัติเมื่อ Apps Script ถูกเรียกใช้งานครั้งถัดไป
 
 ## 2. วางโค้ด Google Apps Script
 
@@ -113,7 +114,7 @@ const DATA_URL = 'https://script.google.com/macros/s/DEPLOYMENT_ID/exec?action=e
 2. กรอกข้อมูลกิจกรรม
 3. เลือกรูปแบบกิจกรรม ถ้าเลือก `ออนไซต์` หรือ `ออนไลน์+ออนไซต์` ต้องกรอกสถานที่
 4. เลือกระดับชั้นและแท็กที่เกี่ยวข้อง
-5. ใส่จำนวนสมาชิกในทีม ค่าเริ่มต้นคือ `1`
+5. ใส่จำนวนสมาชิกในทีม ค่าเริ่มต้นคือ `1` และใส่เป็นช่วงได้ เช่น `2 - 5`
 6. ใส่ค่าสมัคร ค่าเริ่มต้นคือ `0`
 7. ใส่วันเปิด/ปิดรับสมัคร พร้อมเวลาได้ถ้าประกาศระบุไว้
 8. ใส่วันเริ่มและวันจบแข่งขัน/กิจกรรม ถ้ามีหลายวัน
