@@ -524,80 +524,82 @@ select:focus,
 }
 
 .home-event-card {
-  position: relative;
-  min-height: 340px;
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
   padding: 0;
   overflow: hidden;
-  color: #fff;
-  background: var(--brand-dark);
+  background: linear-gradient(180deg, #fff8e5 0%, #fffdf9 100%);
 }
 
-.home-event-card::before {
+.home-card-media {
+  position: relative;
+  width: 100%;
+  height: 136px;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--brand-soft), var(--school-yellow-soft));
+}
+
+.home-card-media::after {
   content: "";
   position: absolute;
-  inset: 0;
-  z-index: 1;
-  background:
-    linear-gradient(180deg, rgba(35, 31, 32, 0.04) 0%, rgba(35, 31, 32, 0.42) 38%, rgba(35, 31, 32, 0.9) 100%),
-    linear-gradient(90deg, rgba(127, 43, 43, 0.4), rgba(217, 170, 50, 0.18));
+  inset: auto 0 0;
+  height: 54px;
+  background: linear-gradient(180deg, rgba(255, 248, 229, 0) 0%, #fff8e5 100%);
 }
 
-.home-event-card .card-bg,
-.home-event-card .card-bg-fallback,
-.home-event-card .card-bg img {
-  position: absolute;
-  inset: 0;
-}
-
-.home-event-card .card-bg {
-  z-index: 0;
-}
-
-.home-event-card .card-bg-fallback {
-  background: linear-gradient(135deg, var(--brand-dark), #c58c2a);
-}
-
-.home-event-card .card-bg img {
+.home-card-media img {
   width: 100%;
   height: 100%;
+  display: block;
   object-fit: cover;
+  object-position: center 28%;
+}
+
+.home-card-media.is-placeholder,
+.home-card-placeholder {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(135deg, rgba(166, 61, 61, 0.16), rgba(217, 170, 50, 0.28)),
+    radial-gradient(circle at 24% 24%, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0) 42%);
 }
 
 .home-event-card .card-content {
-  position: relative;
-  z-index: 2;
+  flex: 1;
   width: 100%;
   padding: 14px;
+  background: linear-gradient(180deg, #fff8e5 0%, #fffdf9 100%);
 }
 
 .home-event-card .card-title {
   min-height: 0;
-  color: #fff;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.46);
+  color: var(--ink);
 }
 
 .home-event-card .card-subtitle,
 .home-event-card .mini-meta {
-  color: rgba(255, 255, 255, 0.86);
+  color: #675a4c;
 }
 
-.home-event-card .mini-meta strong,
+.home-event-card .mini-meta strong {
+  color: #3a312b;
+}
+
 .home-event-card .mini-meta .bi,
 .home-event-card .card-topline > .bi {
-  color: #fff;
+  color: var(--brand);
 }
 
 .home-event-card .chip {
-  border-color: rgba(255, 255, 255, 0.28);
-  background: rgba(255, 255, 255, 0.16);
-  color: #fff;
+  border-color: #ead7b5;
+  background: rgba(255, 255, 255, 0.62);
+  color: #5d5048;
 }
 
 .home-event-card .copy-button {
-  border-color: rgba(255, 221, 150, 0.72);
-  background: rgba(255, 247, 223, 0.92);
+  border-color: #efca7c;
+  background: #fff7df;
 }
 
 .card-topline {

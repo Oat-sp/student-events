@@ -613,7 +613,7 @@ function renderEventCard(event, options = {}) {
 
   return `
     <article class="${className}" data-open-event="${escapeAttr(event.id)}" tabindex="0" role="button" aria-label="เปิดรายละเอียด ${escapeAttr(event.title || 'กิจกรรม')}">
-      ${isHomeCard ? renderCardBackground(event) : ''}
+      ${isHomeCard ? renderCardMedia(event) : ''}
       <div class="card-content">
         <div class="card-topline">
           <span class="pill ${event.status.code === 'open' ? 'green' : event.status.code === 'closing' ? 'orange' : ''}">${escapeHTML(event.status.label)}</span>
@@ -636,11 +636,12 @@ function renderEventCard(event, options = {}) {
   `;
 }
 
-function renderCardBackground(event) {
+function renderCardMedia(event) {
   return `
-    <div class="card-bg" aria-hidden="true">
-      <span class="card-bg-fallback"></span>
-      ${event.posterImage ? `<img src="${escapeAttr(event.posterImage)}" alt="" loading="lazy" onerror="this.remove();">` : ''}
+    <div class="home-card-media" aria-hidden="true">
+      ${event.posterImage
+        ? `<img src="${escapeAttr(event.posterImage)}" alt="" loading="lazy" onerror="this.remove(); this.parentElement.classList.add('is-placeholder');">`
+        : '<span class="home-card-placeholder"></span>'}
     </div>
   `;
 }
