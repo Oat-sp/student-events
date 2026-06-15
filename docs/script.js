@@ -28,6 +28,7 @@ const LEVEL_LABELS = {
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const EVENTS_STORAGE_KEY = 'student_events_data_cache_v5';
 const FETCH_TIMEOUT_MS = 8000;
+let isApplyingRoute = false;
 
 const state = {
   events: [],
@@ -56,6 +57,8 @@ function init() {
   cacheElements();
   populateFilters();
   bindEvents();
+  applyRouteFromLocation();
+  updateHistory({ replace: true });
   loadEvents();
 }
 
@@ -185,6 +188,14 @@ function bindEvents() {
     copyText(buildSummaryText(getSummaryEvents(getFilteredEvents())));
   });
 
+  window.addEventListener('popstate', () => {
+    isApplyingRoute = true;
+    applyRouteFromLocation();
+    render();
+    isApplyingRoute = false;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
   document.body.addEventListener('click', event => {
     const button = event.target.closest('[data-copy-event]');
     if (button) {
@@ -226,6 +237,43 @@ function bindEvents() {
     event.preventDefault();
     openEventDetail(openTarget.dataset.openEvent);
   });
+}
+
+function applyRouteFromLocation() {
+  const params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const eventId = params.get('event');
+  const tab = params.get('tab');
+
+  if (eventId) {
+    state.activeTab = 'detail';
+    state.selectedEventId = eventId;
+    return;
+  }
+
+  const validTabs = ['home', 'all', 'deadline', 'calendar', 'summary'];
+  state.activeTab = validTabs.includes(tab) ? tab : 'home';
+  state.selectedEventId = '';
+}
+
+function updateHistory(options = {}) {
+  if (isApplyingRoute) return;
+
+  const hash = state.activeTab === 'detail' && state.selectedEventId
+    ? `#event=${encodeURIComponent(state.selectedEventId)}`
+    : `#tab=${encodeURIComponent(state.activeTab || 'home')}`;
+  if (window.location.hash === hash) return;
+
+  const nextUrl = `${window.location.pathname}${window.location.search}${hash}`;
+  const historyState = {
+    tab: state.activeTab,
+    eventId: state.selectedEventId
+  };
+
+  if (options.replace) {
+    window.history.replaceState(historyState, '', nextUrl);
+  } else {
+    window.history.pushState(historyState, '', nextUrl);
+  }
 }
 
 async function loadEvents() {
@@ -503,6 +551,7 @@ function setActiveTab(tab) {
   state.activeTab = tab;
   if (tab !== 'detail') state.selectedEventId = '';
   render();
+  updateHistory();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -524,6 +573,7 @@ function applyQuickFilter(filterKey, value) {
   }
 
   render();
+  updateHistory();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -609,11 +659,11 @@ function renderCardGrid(events, emptyText, options = {}) {
 
 function renderEventCard(event, options = {}) {
   const isHomeCard = options.variant === 'home';
-  const className = isHomeCard ? 'event-card home-event-card' : 'event-card';
+  const className = isHomeCard ? 'event-card media-event-card home-event-card' : 'event-card media-event-card';
 
   return `
     <article class="${className}" data-open-event="${escapeAttr(event.id)}" tabindex="0" role="button" aria-label="เปิดรายละเอียด ${escapeAttr(event.title || 'กิจกรรม')}">
-      ${isHomeCard ? renderCardMedia(event) : ''}
+      ${renderCardMedia(event)}
       <div class="card-content">
         <div class="card-topline">
           <span class="pill ${event.status.code === 'open' ? 'green' : event.status.code === 'closing' ? 'orange' : ''}">${escapeHTML(event.status.label)}</span>
@@ -638,10 +688,10 @@ function renderEventCard(event, options = {}) {
 
 function renderCardMedia(event) {
   return `
-    <div class="home-card-media" aria-hidden="true">
+    <div class="event-card-media" aria-hidden="true">
       ${event.posterImage
         ? `<img src="${escapeAttr(event.posterImage)}" alt="" loading="lazy" onerror="this.remove(); this.parentElement.classList.add('is-placeholder');">`
-        : '<span class="home-card-placeholder"></span>'}
+        : '<span class="event-card-placeholder"></span>'}
     </div>
   `;
 }
@@ -724,6 +774,7 @@ function openEventDetail(eventId) {
   state.selectedEventId = eventId;
   state.activeTab = 'detail';
   render();
+  updateHistory();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 

@@ -5,23 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>สนามแข่งขันนักเรียน</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="style.css?v=20260615-home-card-media">
-  <script src="script.js?v=20260615-home-card-media" defer></script>
+  <link rel="stylesheet" href="style.css?v=20260615-card-history">
+  <script src="script.js?v=20260615-card-history" defer></script>
 </head>
 <body>
   <div class="app-shell" id="appShell">
     <aside class="sidebar" aria-label="เมนูหลัก">
-      <div class="brand">
+      <button class="brand" type="button" data-tab="home" aria-label="กลับหน้าแรก">
         <span class="brand-icon"><i class="bi bi-trophy-fill" aria-hidden="true"></i></span>
         <span class="brand-text">สนามแข่งขัน<br>นักเรียน</span>
-      </div>
+      </button>
 
       <button class="sidebar-collapse icon-only" id="sidebarToggle" type="button" aria-label="ย่อหรือขยายแถบเมนู"><i class="bi bi-list" aria-hidden="true"></i></button>
 
       <nav class="side-nav">
-        <button class="side-item is-active" type="button" data-tab="home">
-          <i class="bi bi-house-door-fill" aria-hidden="true"></i><span>หน้าแรก</span>
-        </button>
         <button class="side-item" type="button" data-tab="all">
           <i class="bi bi-grid-fill" aria-hidden="true"></i><span>ทั้งหมด</span>
         </button>
