@@ -28,7 +28,9 @@ const LEVEL_LABELS = {
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const EVENTS_STORAGE_KEY = 'student_events_data_cache_v5';
 const FETCH_TIMEOUT_MS = 8000;
+const IMAGE_LOAD_TIMEOUT_MS = 7000;
 let isApplyingRoute = false;
+let managedImageObserver = null;
 
 const state = {
   events: [],
@@ -187,6 +189,16 @@ function bindEvents() {
   elements.copySummaryButton.addEventListener('click', () => {
     copyText(buildSummaryText(getSummaryEvents(getFilteredEvents())));
   });
+
+  document.body.addEventListener('load', event => {
+    const image = event.target.closest && event.target.closest('[data-managed-image]');
+    if (image) markManagedImageLoaded(image);
+  }, true);
+
+  document.body.addEventListener('error', event => {
+    const image = event.target.closest && event.target.closest('[data-managed-image]');
+    if (image) markManagedImageFailed(image);
+  }, true);
 
   window.addEventListener('popstate', () => {
     isApplyingRoute = true;
@@ -380,7 +392,7 @@ function normalizeEvent(rawEvent) {
     id: createEventId(rawEvent),
     timestamp: stringValue(rawEvent.timestamp),
     title: stringValue(rawEvent.title),
-    posterImage: safeUrl(rawEvent.posterImage),
+    posterImage: safeImageUrl(rawEvent.posterImage),
     type: stringValue(rawEvent.type),
     category: stringValue(rawEvent.category),
     organizer: stringValue(rawEvent.organizer),
@@ -478,6 +490,8 @@ function render() {
   if (state.activeTab === 'summary') {
     renderSummaryView(filteredEvents);
   }
+
+  hydrateManagedImages();
 }
 
 function renderHomeView(events) {
@@ -488,7 +502,10 @@ function renderHomeView(events) {
 
   elements.homeView.innerHTML = `
     <section class="hero-panel">
-      <img class="hero-banner-image" src="assets/home-banner.png" width="1916" height="821" alt="ค้นหาโอกาส พัฒนาตัวเอง กับการแข่งขันและกิจกรรมดี ๆ สำหรับนักเรียนมัธยมศึกษา">
+      <picture>
+        <source srcset="assets/home-banner.webp" type="image/webp">
+        <img class="hero-banner-image" src="assets/home-banner.png" width="1916" height="821" alt="ค้นหาโอกาส พัฒนาตัวเอง กับการแข่งขันและกิจกรรมดี ๆ สำหรับนักเรียนมัธยมศึกษา" loading="eager" decoding="async" fetchpriority="high">
+      </picture>
     </section>
 
     <section class="quick-grid" aria-label="ทางลัดประเภทกิจกรรม">
@@ -654,7 +671,7 @@ function renderCardGrid(events, emptyText, options = {}) {
   }
 
   const gridClass = options.variant === 'home' ? 'card-grid home-card-grid' : 'card-grid';
-  return `<div class="${gridClass}">${events.map(event => renderEventCard(event, options)).join('')}</div>`;
+  return `<div class="${gridClass}">${events.map((event, index) => renderEventCard(event, { ...options, index })).join('')}</div>`;
 }
 
 function renderEventCard(event, options = {}) {
@@ -663,7 +680,7 @@ function renderEventCard(event, options = {}) {
 
   return `
     <article class="${className}" data-open-event="${escapeAttr(event.id)}" tabindex="0" role="button" aria-label="เปิดรายละเอียด ${escapeAttr(event.title || 'กิจกรรม')}">
-      ${renderCardMedia(event)}
+      ${renderCardMedia(event, { eager: isHomeCard && options.index < 2 })}
       <div class="card-content">
         <div class="card-topline">
           <span class="pill ${event.status.code === 'open' ? 'green' : event.status.code === 'closing' ? 'orange' : ''}">${escapeHTML(event.status.label)}</span>
@@ -686,14 +703,136 @@ function renderEventCard(event, options = {}) {
   `;
 }
 
-function renderCardMedia(event) {
+function renderCardMedia(event, options = {}) {
+  const hasImage = Boolean(event.posterImage);
+
   return `
-    <div class="event-card-media" aria-hidden="true">
-      ${event.posterImage
-        ? `<img src="${escapeAttr(event.posterImage)}" alt="" loading="lazy" onerror="this.remove(); this.parentElement.classList.add('is-placeholder');">`
-        : '<span class="event-card-placeholder"></span>'}
+    <div class="event-card-media image-frame ${hasImage ? '' : 'is-placeholder'}" aria-hidden="true">
+      ${hasImage
+        ? `${renderManagedImage(event.posterImage, '', { className: 'event-card-image', width: 640, height: 360, eager: Boolean(options.eager) })}${renderImageFallback('กำลังโหลดรูป...')}`
+        : renderImageFallback('ไม่มีรูปประชาสัมพันธ์')}
     </div>
   `;
+}
+
+function renderManagedImage(src, alt, options = {}) {
+  const loading = options.eager ? 'eager' : 'lazy';
+  const fetchPriority = options.eager ? 'high' : 'low';
+  const className = ['managed-image', options.className].filter(Boolean).join(' ');
+  const dimensions = [
+    options.width ? `width="${escapeAttr(options.width)}"` : '',
+    options.height ? `height="${escapeAttr(options.height)}"` : ''
+  ].filter(Boolean).join(' ');
+
+  return `<img class="${className}" src="${escapeAttr(src)}" alt="${escapeAttr(alt)}" loading="${loading}" decoding="async" fetchpriority="${fetchPriority}" referrerpolicy="no-referrer" data-managed-image ${dimensions}>`;
+}
+
+function renderImageFallback(text) {
+  return `
+    <span class="image-fallback">
+      <span class="image-fallback-icon">${renderIcon('image')}</span>
+      <span data-image-fallback-text>${escapeHTML(text)}</span>
+    </span>
+  `;
+}
+
+function hydrateManagedImages() {
+  document.querySelectorAll('[data-managed-image]').forEach(image => {
+    const frame = image.closest('.image-frame');
+    if (!frame || image.dataset.imageWatchStarted === 'true') return;
+
+    image.dataset.imageWatchStarted = 'true';
+    frame.classList.add('is-loading');
+
+    if (image.complete) {
+      if (image.naturalWidth > 0) {
+        markManagedImageLoaded(image);
+      } else {
+        markManagedImageFailed(image);
+      }
+      return;
+    }
+
+    if (image.getAttribute('loading') === 'eager') {
+      startManagedImageTimer(image);
+    } else if ('IntersectionObserver' in window) {
+      getManagedImageObserver().observe(image);
+    } else {
+      startManagedImageTimer(image);
+    }
+  });
+}
+
+function getManagedImageObserver() {
+  if (managedImageObserver) return managedImageObserver;
+
+  managedImageObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+
+      managedImageObserver.unobserve(entry.target);
+      startManagedImageTimer(entry.target);
+    });
+  }, { rootMargin: '360px 0px' });
+
+  return managedImageObserver;
+}
+
+function startManagedImageTimer(image) {
+  if (!image.isConnected || image.complete || image.dataset.imageTimeoutId) return;
+
+  const timeoutId = window.setTimeout(() => {
+    markManagedImageSlow(image);
+  }, IMAGE_LOAD_TIMEOUT_MS);
+  image.dataset.imageTimeoutId = String(timeoutId);
+}
+
+function markManagedImageLoaded(image) {
+  if (!image.isConnected) return;
+
+  clearManagedImageTimer(image);
+  const frame = image.closest('.image-frame');
+  if (!frame) return;
+
+  frame.classList.add('is-loaded');
+  frame.classList.remove('is-loading', 'is-error', 'is-placeholder', 'is-slow');
+}
+
+function markManagedImageFailed(image) {
+  if (!image.isConnected) return;
+
+  clearManagedImageTimer(image);
+  const frame = image.closest('.image-frame');
+  if (!frame) return;
+
+  frame.classList.add('is-error', 'is-placeholder');
+  frame.classList.remove('is-loading', 'is-loaded', 'is-slow');
+  updateImageFallbackText(frame, 'รูปต้นทางโหลดไม่ได้');
+}
+
+function markManagedImageSlow(image) {
+  if (!image.isConnected || image.complete) return;
+
+  const frame = image.closest('.image-frame');
+  if (!frame) return;
+
+  frame.classList.add('is-slow');
+  updateImageFallbackText(frame, 'รูปกำลังโหลดช้า แสดงข้อมูลไว้ก่อน');
+}
+
+function clearManagedImageTimer(image) {
+  const timeoutId = Number(image.dataset.imageTimeoutId);
+  if (timeoutId) window.clearTimeout(timeoutId);
+  delete image.dataset.imageTimeoutId;
+
+  if (managedImageObserver) {
+    managedImageObserver.unobserve(image);
+  }
+}
+
+function updateImageFallbackText(frame, text) {
+  const fallbackText = frame.querySelector('[data-image-fallback-text]');
+  if (fallbackText) fallbackText.textContent = text;
 }
 
 function renderDetailView() {
@@ -714,10 +853,10 @@ function renderDetailView() {
   elements.detailView.innerHTML = `
     <article class="detail-shell">
       <div class="detail-hero">
-        <div class="poster-frame">
+        <div class="poster-frame image-frame ${event.posterImage ? '' : 'is-placeholder'}">
           ${event.posterImage
-            ? `<img src="${escapeAttr(event.posterImage)}" alt="โปสเตอร์ ${escapeAttr(event.title)}" loading="lazy" onerror="this.remove(); this.parentElement.innerHTML='<div class=&quot;poster-placeholder&quot;>ไม่มีรูปประชาสัมพันธ์</div>';">`
-            : '<div class="poster-placeholder">ไม่มีรูปประชาสัมพันธ์</div>'}
+            ? `${renderManagedImage(event.posterImage, `โปสเตอร์ ${event.title || 'กิจกรรม'}`, { className: 'poster-image', width: 800, height: 1000, eager: true })}${renderImageFallback('กำลังโหลดรูปประชาสัมพันธ์...')}`
+            : renderImageFallback('ไม่มีรูปประชาสัมพันธ์')}
         </div>
         <div class="detail-title">
           <button class="secondary-button" type="button" data-quick-filter="${escapeAttr(state.filters.query ? 'all' : 'home')}">${renderIcon('arrow-left')}กลับ</button>
@@ -1404,6 +1543,36 @@ function safeUrl(value) {
   }
 
   return '';
+}
+
+function safeImageUrl(value) {
+  const text = stringValue(value);
+  if (!text) return '';
+
+  try {
+    const url = new URL(text);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return '';
+
+    // ลิงก์ Google Drive แบบ share เป็นหน้า HTML ไม่ใช่รูปโดยตรง จึงแปลงเป็น thumbnail endpoint
+    const driveFileId = getGoogleDriveFileId(url);
+    if (driveFileId) {
+      return `https://drive.google.com/thumbnail?id=${encodeURIComponent(driveFileId)}&sz=w1200`;
+    }
+
+    if (url.protocol === 'http:') url.protocol = 'https:';
+    return url.href;
+  } catch (error) {
+    return '';
+  }
+}
+
+function getGoogleDriveFileId(url) {
+  if (!/(\.|^)drive\.google\.com$/i.test(url.hostname)) return '';
+
+  const pathMatch = url.pathname.match(/\/file\/d\/([^/]+)/);
+  if (pathMatch) return pathMatch[1];
+
+  return url.searchParams.get('id') || '';
 }
 
 function escapeHTML(value) {
