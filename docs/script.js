@@ -26,7 +26,7 @@ const LEVEL_LABELS = {
   m6: 'ม.6'
 };
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const EVENTS_STORAGE_KEY = 'student_events_data_cache_v5';
+const EVENTS_STORAGE_KEY = 'student_events_data_cache_v6';
 const FETCH_TIMEOUT_MS = 8000;
 const IMAGE_LOAD_TIMEOUT_MS = 7000;
 let isApplyingRoute = false;
@@ -348,7 +348,9 @@ async function fetchEventsData() {
 
 function applyEventsData(data) {
   const rows = Array.isArray(data) ? data : data.events || [];
-  state.events = rows.map(normalizeEvent);
+  state.events = rows
+    .map(normalizeEvent)
+    .filter(event => !isPastEvent(event));
 }
 
 function readCachedEventsData() {
@@ -430,6 +432,7 @@ function normalizeEvent(rawEvent) {
     sourceLink: safeUrl(rawEvent.sourceLink),
     documentLinks: stringValue(rawEvent.documentLinks),
     contactTeacher: stringValue(rawEvent.contactTeacher),
+    isClosed: toBoolean(rawEvent.isClosed),
     isPublished: toBoolean(rawEvent.isPublished)
   };
 
@@ -683,7 +686,7 @@ function renderEventCard(event, options = {}) {
       ${renderCardMedia(event, { eager: isHomeCard && options.index < 2 })}
       <div class="card-content">
         <div class="card-topline">
-          <span class="pill ${event.status.code === 'open' ? 'green' : event.status.code === 'closing' ? 'orange' : ''}">${escapeHTML(event.status.label)}</span>
+          <span class="pill ${getStatusPillClass(event.status)}">${escapeHTML(event.status.label)}</span>
           ${renderIcon('star')}
         </div>
         <h3 class="card-title">${escapeHTML(event.title || 'ไม่ระบุชื่อกิจกรรม')}</h3>
@@ -713,6 +716,14 @@ function renderCardMedia(event, options = {}) {
         : renderImageFallback('ไม่มีรูปประชาสัมพันธ์')}
     </div>
   `;
+}
+
+function getStatusPillClass(status) {
+  if (!status) return '';
+  if (status.code === 'open') return 'green';
+  if (status.code === 'closing') return 'orange';
+  if (status.code === 'manual-closed') return 'closed';
+  return '';
 }
 
 function renderManagedImage(src, alt, options = {}) {
@@ -1174,20 +1185,18 @@ function getAutoLevelTags(event) {
 function getStatus(event) {
   // ใช้เวลาเปิด/ปิดเมื่อมีข้อมูล แต่ยังเทียบวันกิจกรรมแบบ date-only เพื่อลดปัญหา timezone
   const now = new Date();
-  const today = getTodayLocal();
   const openAt = parseLocalDateTime(event.registerOpenDate, event.registerOpenTime, 'start');
   const closeAt = parseLocalDateTime(event.registerCloseDate, event.registerCloseTime, 'end');
-  const eventEndDate = parseLocalDate(event.eventEndDate || event.eventStartDate);
 
-  if (eventEndDate && today > eventEndDate) {
-    return { code: 'done', label: 'เสร็จสิ้นแล้ว', className: 'status-done' };
+  if (event.isClosed === true) {
+    return { code: 'manual-closed', label: 'ปิดรับสมัคร', className: 'status-manual-closed' };
   }
 
   if (openAt && now < openAt) {
     return { code: 'upcoming', label: 'ยังไม่เปิดรับสมัคร', className: 'status-upcoming' };
   }
 
-  if (closeAt && now > closeAt && (!eventEndDate || today <= eventEndDate)) {
+  if (closeAt && now > closeAt) {
     return { code: 'closed', label: 'ปิดรับสมัครแล้ว / รอกิจกรรม', className: 'status-closed' };
   }
 
@@ -1204,6 +1213,13 @@ function getStatus(event) {
   }
 
   return { code: 'unknown', label: 'รอข้อมูลกำหนดการ', className: 'status-closed' };
+}
+
+function isPastEvent(event) {
+  const eventEndDate = parseLocalDate(event.eventEndDate || event.eventStartDate || event.eventDate);
+  if (!eventEndDate) return false;
+
+  return getTodayLocal() > eventEndDate;
 }
 
 function parseDocumentLinks(text) {

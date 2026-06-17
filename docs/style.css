@@ -767,6 +767,12 @@ select:focus,
   color: #9a4a05;
 }
 
+.pill.closed,
+.status-manual-closed {
+  background: var(--rose-soft);
+  color: #b42328;
+}
+
 .status-pill {
   background: #f4eee7;
   color: #5c5148;

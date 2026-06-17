@@ -26,7 +26,7 @@ README.md
 หัวตารางที่ระบบใช้คือ:
 
 ```text
-timestamp, title, posterImage, type, category, organizer, p1, p2, p3, p4, p5, p6, m1, m2, m3, m4, m5, m6, teamMemberCount, registrationFee, activityFormat, location, interestTags, featureTags, portfolioTags, registerOpenDate, registerOpenTime, registerCloseDate, registerCloseTime, submissionDate, eventStartDate, eventEndDate, summary, sourceLink, documentLinks, contactTeacher, isPublished
+timestamp, title, posterImage, type, category, organizer, p1, p2, p3, p4, p5, p6, m1, m2, m3, m4, m5, m6, teamMemberCount, registrationFee, activityFormat, location, interestTags, featureTags, portfolioTags, registerOpenDate, registerOpenTime, registerCloseDate, registerCloseTime, submissionDate, eventStartDate, eventEndDate, summary, sourceLink, documentLinks, contactTeacher, isClosed, isPublished
 ```
 
 ถ้าเคยใช้หัวตารางรุ่นเก่าที่ไม่มี `p1`-`p6` หรือมี `eventDate` ระบบจะเพิ่มคอลัมน์ใหม่และย้ายค่าเดิมไปที่ `eventStartDate` ให้อัตโนมัติเมื่อ Apps Script ถูกเรียกใช้งานครั้งถัดไป
@@ -127,6 +127,7 @@ const DATA_URL = 'https://script.google.com/macros/s/DEPLOYMENT_ID/exec?action=e
 ```
 
 11. กดบันทึกข้อมูล
+12. ถ้าต้องการปิดรับสมัครเองภายหลัง ให้เปิด Google Sheet แล้วติ๊กคอลัมน์ `isClosed` ของกิจกรรมนั้นเป็น `TRUE`
 
 ### นักเรียน
 
@@ -141,6 +142,8 @@ const DATA_URL = 'https://script.google.com/macros/s/DEPLOYMENT_ID/exec?action=e
 - ลิงก์รูปประชาสัมพันธ์ควรเป็นลิงก์รูปโดยตรงที่เปิดแล้วเห็นรูปทันที หน้าเว็บจะแปลงลิงก์ Google Drive แบบแชร์เป็น thumbnail ให้อัตโนมัติ และจะใช้รูปสำรองเมื่อรูปต้นทางโหลดไม่ได้
 - ลิงก์รูปจาก Facebook CDN หรือ `scontent...fbcdn.net` บางรายการมีวันหมดอายุ ถ้ารูปหายภายหลังให้คัดลอกลิงก์รูปใหม่จากประกาศต้นทาง
 - ถ้าไม่ต้องการเผยแพร่รายการใด ให้เอาเครื่องหมายถูกออกจาก `เผยแพร่ให้นักเรียนเห็น` ในฟอร์ม หรือแก้ค่า `isPublished` ในชีตเป็น `FALSE`
+- ถ้ากิจกรรมปิดรับสมัครเองก่อนกำหนด ให้ติ๊ก `isClosed` ใน Google Sheet เป็น `TRUE` หน้าเว็บจะแสดงป้าย `ปิดรับสมัคร`
+- กิจกรรมที่ผ่านวันกิจกรรมแล้วจะไม่แสดงบนหน้าเว็บนักเรียน แต่ข้อมูลเดิมยังอยู่ใน Google Sheet
 - ระบบจะติดแท็กคุณสมบัติอัตโนมัติจากจำนวนสมาชิก ค่าสมัคร และรูปแบบกิจกรรม เช่น `แข่งขันเดี่ยว`, `แข่งขันทีม`, `ฟรี`, `มีค่าสมัคร`, `ออนไลน์`, `ต้องเดินทาง`
 - หน้าเว็บจะคำนวณสถานะรับสมัครจากวันที่/เวลาเปิดรับสมัคร วันที่/เวลาปิดรับสมัคร และวันกิจกรรมโดยอัตโนมัติ
 - แท็บ `สรุปประชาสัมพันธ์` มีข้อความพร้อมคัดลอกสำหรับส่งต่อใน LINE หรือช่องทางประชาสัมพันธ์ของโรงเรียน
