@@ -3,7 +3,7 @@ var SPREADSHEET_NAME = 'student-events-data';
 var SPREADSHEET_ID = '1Ij0EfvD8AW8gz3tffG1Yz7fPJMHa2vnh5MgnFau_bss';
 var EVENTS_CACHE_KEY = 'events_json';
 var EVENTS_CACHE_SECONDS = 600;
-var EVENTS_SCHEMA_VERSION = '20260617-is-closed-hide-expired';
+var EVENTS_SCHEMA_VERSION = '20260617-is-closed-true-false';
 
 var HEADERS = [
   'timestamp',
@@ -50,7 +50,7 @@ var LEVEL_KEYS = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'm1', 'm2', 'm3', 'm4', 'm
 var TAG_KEYS = ['interestTags', 'featureTags', 'portfolioTags'];
 var DATE_KEYS = ['registerOpenDate', 'registerCloseDate', 'submissionDate', 'eventStartDate', 'eventEndDate'];
 var TIME_KEYS = ['registerOpenTime', 'registerCloseTime'];
-var CHECKBOX_KEYS = ['isClosed'];
+var BOOLEAN_OPTION_KEYS = ['isClosed'];
 var AUTO_FEATURE_TAGS = ['แข่งขันเดี่ยว', 'แข่งขันทีม', 'ฟรี', 'มีค่าสมัคร', 'ออนไลน์', 'ต้องเดินทาง'];
 var REMOVED_INTEREST_TAGS = ['ทำงานเป็นทีม'];
 var MIXED_ACTIVITY_FORMAT = 'ออนไลน์+ออนไซต์';
@@ -81,7 +81,7 @@ function saveEvent(form) {
     if (header === 'teamMemberCount') return data.teamMemberCount;
     if (header === 'registrationFee') return data.registrationFee;
     if (header === 'eventStartDate') return cleanText_(data.eventStartDate || data.eventDate);
-    if (header === 'isClosed') return data.isClosed === undefined ? false : parseBoolean_(data.isClosed);
+    if (header === 'isClosed') return formatBooleanText_(data.isClosed === undefined ? false : data.isClosed);
     if (header === 'isPublished') return data.isPublished === undefined ? true : parseBoolean_(data.isPublished);
     return cleanText_(data[header]);
   });
@@ -212,7 +212,7 @@ function ensureEventsSheet_() {
     migrateHeaderRow_(sheet, existingHeaders);
   }
 
-  applyCheckboxValidation_(sheet);
+  applyBooleanOptionValidation_(sheet);
   return sheet;
 }
 
@@ -225,7 +225,7 @@ function ensureSpreadsheetName_(spreadsheet) {
 function writeHeaderRow_(sheet) {
   sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
   sheet.setFrozenRows(1);
-  applyCheckboxValidation_(sheet);
+  applyBooleanOptionValidation_(sheet);
 }
 
 function headerRowMatches_(existingHeaders) {
@@ -249,8 +249,12 @@ function migrateHeaderRow_(sheet, existingHeaders) {
   // ย้ายข้อมูลเดิมตามชื่อหัวตาราง เพื่อเพิ่มคอลัมน์ใหม่โดยไม่ทำให้ข้อมูลเก่าสลับช่อง
   var migratedRows = rows.map(function(row) {
     return targetHeaders.map(function(header) {
-      if (existingMap[header] !== undefined) return row[existingMap[header]];
+      if (existingMap[header] !== undefined) {
+        if (BOOLEAN_OPTION_KEYS.indexOf(header) !== -1) return formatBooleanText_(row[existingMap[header]]);
+        return row[existingMap[header]];
+      }
       if (header === 'eventStartDate' && existingMap.eventDate !== undefined) return row[existingMap.eventDate];
+      if (BOOLEAN_OPTION_KEYS.indexOf(header) !== -1) return 'FALSE';
       return '';
     });
   });
@@ -265,15 +269,15 @@ function migrateHeaderRow_(sheet, existingHeaders) {
   }
 
   sheet.setFrozenRows(1);
-  applyCheckboxValidation_(sheet);
+  applyBooleanOptionValidation_(sheet);
 }
 
-function applyCheckboxValidation_(sheet) {
+function applyBooleanOptionValidation_(sheet) {
   var headerMap = buildHeaderMap_(sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]);
-  var rule = SpreadsheetApp.newDataValidation().requireCheckbox().build();
+  var rule = SpreadsheetApp.newDataValidation().requireValueInList(['TRUE', 'FALSE'], true).build();
   var rowCount = Math.max(sheet.getMaxRows() - 1, 1);
 
-  CHECKBOX_KEYS.forEach(function(header) {
+  BOOLEAN_OPTION_KEYS.forEach(function(header) {
     if (headerMap[header] === undefined) return;
 
     sheet
@@ -514,6 +518,10 @@ function parseBoolean_(value) {
 
   var text = String(value || '').trim().toLowerCase();
   return ['true', 'yes', 'y', '1', 'published', 'เผยแพร่'].indexOf(text) !== -1;
+}
+
+function formatBooleanText_(value) {
+  return parseBoolean_(value) ? 'TRUE' : 'FALSE';
 }
 
 function normalizeDate_(value) {
