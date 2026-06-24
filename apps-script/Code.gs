@@ -3,7 +3,7 @@ var SPREADSHEET_NAME = 'student-events-data';
 var SPREADSHEET_ID = '1Ij0EfvD8AW8gz3tffG1Yz7fPJMHa2vnh5MgnFau_bss';
 var EVENTS_CACHE_KEY = 'events_json';
 var EVENTS_CACHE_SECONDS = 600;
-var EVENTS_SCHEMA_VERSION = '20260617-is-closed-true-false';
+var EVENTS_SCHEMA_VERSION = '20260624-save-row-fix';
 
 var HEADERS = [
   'timestamp',
@@ -86,7 +86,7 @@ function saveEvent(form) {
     return cleanText_(data[header]);
   });
 
-  sheet.appendRow(row);
+  appendEventRow_(sheet, row);
   clearEventsCache_();
 
   return {
@@ -284,6 +284,38 @@ function applyBooleanOptionValidation_(sheet) {
       .getRange(2, headerMap[header] + 1, rowCount, 1)
       .setDataValidation(rule);
   });
+}
+
+function appendEventRow_(sheet, row) {
+  var targetRow = getNextEventRow_(sheet);
+  ensureRowCapacity_(sheet, targetRow);
+  sheet.getRange(targetRow, 1, 1, row.length).setValues([row]);
+}
+
+function getNextEventRow_(sheet) {
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return 2;
+
+  var timestampIndex = HEADERS.indexOf('timestamp');
+  var titleIndex = HEADERS.indexOf('title');
+  var rows = sheet.getRange(2, 1, lastRow - 1, Math.max(sheet.getLastColumn(), HEADERS.length)).getValues();
+
+  // บางชีตมีค่า FALSE ค้างจาก checkbox ในแถวว่าง จึงหาแถวว่างแรกจากข้อมูลกิจกรรมจริงแทน appendRow()
+  for (var index = 0; index < rows.length; index += 1) {
+    var row = rows[index];
+    if (!cleanText_(row[timestampIndex]) && !cleanText_(row[titleIndex])) {
+      return index + 2;
+    }
+  }
+
+  return lastRow + 1;
+}
+
+function ensureRowCapacity_(sheet, targetRow) {
+  var maxRows = sheet.getMaxRows();
+  if (targetRow <= maxRows) return;
+
+  sheet.insertRowsAfter(maxRows, targetRow - maxRows);
 }
 
 function buildHeaderMap_(headerRow) {
